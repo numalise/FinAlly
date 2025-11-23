@@ -1,0 +1,79 @@
+# Credentials and secrets
+.env
+.env.*
+.aws/
+session.json
+*.pem
+*.key
+*_credentials.json
+secrets/
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+!terraform.tfvars.example
+*.tfplan
+.terraformrc
+terraform.rc
+
+# Node.js / Frontend
+node_modules/
+.next/
+out/
+dist/
+build/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python (if used for Lambda)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+coverage/
+.nyc_output/
+*.test.js.snap
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Package files
+*.zip
+*.tar.gz
+
+# Local environment
+.local/
