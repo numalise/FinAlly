@@ -24,3 +24,23 @@ output "aurora_security_group_id" {
   description = "Aurora security group ID"
   value       = module.security_groups.aurora_security_group_id
 }
+# IAM Outputs
+output "lambda_execution_role_arn" {
+  description = "Lambda execution role ARN"
+  value       = module.iam.lambda_execution_role_arn
+}
+
+output "lambda_execution_role_name" {
+  description = "Lambda execution role name"
+  value       = module.iam.lambda_execution_role_name
+}
+
+output "eventbridge_lambda_role_arn" {
+  description = "EventBridge Lambda role ARN"
+  value       = module.iam.eventbridge_lambda_role_arn
+}
+
+output "api_gateway_cloudwatch_role_arn" {
+  description = "API Gateway CloudWatch role ARN"
+  value       = module.iam.api_gateway_cloudwatch_role_arn
+}

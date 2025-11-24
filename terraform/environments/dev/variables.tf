@@ -57,3 +57,32 @@ variable "admin_cidr_blocks" {
   type        = list(string)
   default     = []
 }
+variable "ses_from_addresses" {
+  description = "Allowed SES sender addresses"
+  type        = list(string)
+  default     = ["noreply@*", "*@finally.app"]
+}
+
+variable "enable_rds_data_api" {
+  description = "Enable RDS Data API access"
+  type        = bool
+  default     = false
+}
+
+variable "cognito_user_pool_arn" {
+  description = "Cognito User Pool ARN (add after Phase 3)"
+  type        = string
+  default     = ""
+}
+
+variable "aurora_cluster_arn" {
+  description = "Aurora cluster ARN (add after Phase 2)"
+  type        = string
+  default     = ""
+}
+
+variable "kms_key_arn" {
+  description = "KMS key ARN for encryption"
+  type        = string
+  default     = ""
+}

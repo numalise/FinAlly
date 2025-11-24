@@ -49,3 +49,18 @@ module "security_groups" {
   
   common_tags = local.common_tags
 }
+# IAM Module
+module "iam" {
+  source = "../../modules/iam"
+  
+  project_name          = var.project_name
+  environment           = var.environment
+  aws_region            = var.aws_region
+  ses_from_addresses    = var.ses_from_addresses
+  enable_rds_data_api   = var.enable_rds_data_api
+  cognito_user_pool_arn = var.cognito_user_pool_arn
+  aurora_cluster_arn    = var.aurora_cluster_arn
+  kms_key_arn           = var.kms_key_arn
+  
+  common_tags = local.common_tags
+}
