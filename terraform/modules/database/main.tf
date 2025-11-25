@@ -4,8 +4,7 @@
 
 resource "random_password" "master_password" {
   length  = 32
-  special = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  special = false
 }
 
 # ========================================
@@ -156,19 +155,8 @@ resource "aws_db_instance" "postgresql" {
   apply_immediately          = var.apply_immediately
   
   # Free Tier Specific
-  copy_tags_to_snapshot = true
-  
-  tags = merge(
-    var.common_tags,
-    {
-      Name = "${var.project_name}-${var.environment}-postgres"
-      Tier = "FreeTier"
-    }
-  )
-  
   lifecycle {
     ignore_changes = [
-      password,
       final_snapshot_identifier
     ]
   }

@@ -77,3 +77,24 @@ output "database_name" {
   description = "Database name"
   value       = module.database.database_name
 }
+
+# SSM Bastion Outputs
+output "bastion_instance_id" {
+  description = "SSM bastion instance ID"
+  value       = module.ssm_bastion.instance_id
+}
+
+output "bastion_private_ip" {
+  description = "Bastion private IP"
+  value       = module.ssm_bastion.instance_private_ip
+}
+
+output "ssm_connect_command" {
+  description = "SSM connection command"
+  value       = module.ssm_bastion.ssm_connect_command
+}
+
+output "bastion_security_group_id" {
+  description = "Bastion security group ID"
+  value       = module.ssm_bastion.security_group_id
+}

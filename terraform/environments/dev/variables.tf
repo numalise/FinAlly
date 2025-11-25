@@ -131,3 +131,9 @@ variable "deletion_protection" {
   type        = bool
   default     = false # false for dev
 }
+
+variable "bastion_instance_type" {
+  description = "SSM bastion instance type"
+  type        = string
+  default     = "t3.micro"
+}
