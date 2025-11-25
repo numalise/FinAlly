@@ -47,7 +47,7 @@ variable "allow_lambda_http_egress" {
 }
 
 variable "enable_admin_access" {
-  description = "Enable admin Aurora access"
+  description = "Enable admin database access"
   type        = bool
   default     = false
 }
@@ -57,6 +57,8 @@ variable "admin_cidr_blocks" {
   type        = list(string)
   default     = []
 }
+
+# IAM Variables
 variable "ses_from_addresses" {
   description = "Allowed SES sender addresses"
   type        = list(string)
@@ -75,8 +77,8 @@ variable "cognito_user_pool_arn" {
   default     = ""
 }
 
-variable "aurora_cluster_arn" {
-  description = "Aurora cluster ARN (add after Phase 2)"
+variable "database_arn" {
+  description = "RDS database ARN (populated after database creation)"
   type        = string
   default     = ""
 }
@@ -85,4 +87,47 @@ variable "kms_key_arn" {
   description = "KMS key ARN for encryption"
   type        = string
   default     = ""
+}
+
+# Database Configuration
+variable "database_name" {
+  description = "Database name"
+  type        = string
+  default     = "finally"
+}
+
+variable "master_username" {
+  description = "Master username"
+  type        = string
+  default     = "finally_admin"
+}
+
+variable "rds_instance_class" {
+  description = "RDS instance class (Free Tier: db.t3.micro)"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "rds_allocated_storage" {
+  description = "RDS allocated storage in GB (Free Tier: max 20GB)"
+  type        = number
+  default     = 20
+}
+
+variable "backup_retention_days" {
+  description = "Backup retention days (Free Tier: 1 minimum)"
+  type        = number
+  default     = 1
+}
+
+variable "skip_final_snapshot" {
+  description = "Skip final snapshot on destroy"
+  type        = bool
+  default     = true # true for dev
+}
+
+variable "deletion_protection" {
+  description = "Enable deletion protection"
+  type        = bool
+  default     = false # false for dev
 }

@@ -236,7 +236,7 @@ resource "aws_iam_policy" "rds_data_access" {
           "rds-data:CommitTransaction",
           "rds-data:RollbackTransaction"
         ]
-        Resource = var.aurora_cluster_arn != "" ? [var.aurora_cluster_arn] : ["*"]
+        Resource = var.database_arn != "" ? [var.database_arn] : ["*"]
       }
     ]
   })

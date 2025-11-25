@@ -16,15 +16,15 @@ resource "aws_security_group" "lambda" {
   }
 }
 
-# Lambda Egress: Allow outbound to Aurora PostgreSQL
-resource "aws_security_group_rule" "lambda_to_aurora" {
+# Lambda Egress: Allow outbound to Database PostgreSQL
+resource "aws_security_group_rule" "lambda_to_database" {
   type                     = "egress"
   from_port                = 5432
   to_port                  = 5432
   protocol                 = "tcp"
   security_group_id        = aws_security_group.lambda.id
-  source_security_group_id = aws_security_group.aurora.id
-  description              = "Allow Lambda to connect to Aurora PostgreSQL"
+  source_security_group_id = aws_security_group.database.id
+  description              = "Allow Lambda to connect to RDS PostgreSQL"
 }
 
 # Lambda Egress: Allow outbound HTTPS for Prisma Data Proxy and AWS services
@@ -50,16 +50,16 @@ resource "aws_security_group_rule" "lambda_to_internet_http" {
   description       = "Allow Lambda HTTP egress for external APIs"
 }
 
-# Security Group for Aurora
-resource "aws_security_group" "aurora" {
-  name_prefix = "${var.project_name}-${var.environment}-aurora-"
-  description = "Security group for Aurora PostgreSQL cluster"
+# Security Group for Database (RDS PostgreSQL)
+resource "aws_security_group" "database" {
+  name_prefix = "${var.project_name}-${var.environment}-database-"
+  description = "Security group for RDS PostgreSQL database"
   vpc_id      = var.vpc_id
   
   tags = merge(
     var.common_tags,
     {
-      Name = "${var.project_name}-${var.environment}-aurora-sg"
+      Name = "${var.project_name}-${var.environment}-database-sg"
     }
   )
   
@@ -68,25 +68,22 @@ resource "aws_security_group" "aurora" {
   }
 }
 
-# Aurora Ingress: Allow PostgreSQL connections only from Lambda
-resource "aws_security_group_rule" "aurora_from_lambda" {
+# Database Ingress: Allow PostgreSQL connections only from Lambda
+resource "aws_security_group_rule" "database_from_lambda" {
   type                     = "ingress"
   from_port                = 5432
   to_port                  = 5432
   protocol                 = "tcp"
-  security_group_id        = aws_security_group.aurora.id
+  security_group_id        = aws_security_group.database.id
   source_security_group_id = aws_security_group.lambda.id
   description              = "Allow PostgreSQL connections from Lambda functions"
 }
 
-# Aurora Egress: Deny all (Aurora should not initiate outbound connections)
-# Note: AWS security groups are stateful, so response traffic is automatically allowed
-
-# Optional: Security Group for Bastion/Admin Access (emergency only)
+# Optional: Security Group for Admin Access (emergency only)
 resource "aws_security_group" "admin" {
   count       = var.enable_admin_access ? 1 : 0
   name_prefix = "${var.project_name}-${var.environment}-admin-"
-  description = "Security group for administrative access to Aurora"
+  description = "Security group for administrative access to database"
   vpc_id      = var.vpc_id
   
   tags = merge(
@@ -102,13 +99,13 @@ resource "aws_security_group" "admin" {
 }
 
 # Admin Ingress: Allow PostgreSQL from specific IP (configurable)
-resource "aws_security_group_rule" "admin_to_aurora" {
+resource "aws_security_group_rule" "admin_to_database" {
   count             = var.enable_admin_access ? 1 : 0
   type              = "ingress"
   from_port         = 5432
   to_port           = 5432
   protocol          = "tcp"
-  security_group_id = aws_security_group.aurora.id
+  security_group_id = aws_security_group.database.id
   cidr_blocks       = var.admin_cidr_blocks
   description       = "Allow PostgreSQL from admin IP addresses"
 }

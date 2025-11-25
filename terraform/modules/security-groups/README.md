@@ -1,7 +1,7 @@
 # Security Groups Module
 
 ## Overview
-Implements least-privilege security groups for Aurora and Lambda with minimal blast radius.
+Implements least-privilege security groups for RDS PostgreSQL and Lambda with minimal blast radius.
 
 ## Security Model
 ```
@@ -13,7 +13,7 @@ Implements least-privilege security groups for Aurora and Lambda with minimal bl
        │ Egress: 443 (HTTPS)
        ▼
 ┌─────────────┐
-│   Aurora    │
+│     RDS     │
 │  PostgreSQL │
 └─────────────┘
    Ingress: 5432 (from Lambda only)
@@ -21,11 +21,11 @@ Implements least-privilege security groups for Aurora and Lambda with minimal bl
 
 ## Rules
 ### Lambda Security Group
-- **Egress**: Port 5432 to Aurora SG (PostgreSQL)
+- **Egress**: Port 5432 to Database SG (PostgreSQL)
 - **Egress**: Port 443 to 0.0.0.0/0 (Prisma Data Proxy, AWS APIs)
 - **Egress**: Port 80 to 0.0.0.0/0 (optional, for external APIs)
 
-### Aurora Security Group
+### Database Security Group
 - **Ingress**: Port 5432 from Lambda SG only
 - **Egress**: None (stateful responses allowed automatically)
 
@@ -41,14 +41,7 @@ module "security_groups" {
   environment               = "dev"
   vpc_id                    = module.networking.vpc_id
   allow_lambda_http_egress  = false
-  enable_admin_access       = false  # true only for debugging
-  admin_cidr_blocks         = []     # Your IP if admin enabled
+  enable_admin_access       = false
+  admin_cidr_blocks         = []
 }
 ```
-
-## Security Best Practices
-- Aurora accepts connections ONLY from Lambda security group
-- No public internet access to Aurora
-- Lambda cannot accept inbound connections (egress only)
-- Admin access disabled by default
-- Use AWS Systems Manager Session Manager for emergency Aurora access instead of bastion hosts

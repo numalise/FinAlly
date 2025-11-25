@@ -25,8 +25,8 @@ variable "cognito_user_pool_arn" {
   default     = ""
 }
 
-variable "aurora_cluster_arn" {
-  description = "Aurora cluster ARN (optional, for RDS Data API)"
+variable "database_arn" {
+  description = "RDS database ARN (optional, for RDS Data API)"
   type        = string
   default     = ""
 }

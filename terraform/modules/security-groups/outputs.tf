@@ -3,9 +3,9 @@ output "lambda_security_group_id" {
   value       = aws_security_group.lambda.id
 }
 
-output "aurora_security_group_id" {
-  description = "Security group ID for Aurora cluster"
-  value       = aws_security_group.aurora.id
+output "database_security_group_id" {
+  description = "Security group ID for RDS database"
+  value       = aws_security_group.database.id
 }
 
 output "admin_security_group_id" {

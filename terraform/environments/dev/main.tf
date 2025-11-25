@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -49,6 +53,7 @@ module "security_groups" {
   
   common_tags = local.common_tags
 }
+
 # IAM Module
 module "iam" {
   source = "../../modules/iam"
@@ -59,8 +64,34 @@ module "iam" {
   ses_from_addresses    = var.ses_from_addresses
   enable_rds_data_api   = var.enable_rds_data_api
   cognito_user_pool_arn = var.cognito_user_pool_arn
-  aurora_cluster_arn    = var.aurora_cluster_arn
+  database_arn          = var.database_arn
   kms_key_arn           = var.kms_key_arn
+  
+  common_tags = local.common_tags
+}
+
+# Database Module (RDS PostgreSQL - Free Tier)
+module "database" {
+  source = "../../modules/database"
+  
+  project_name             = var.project_name
+  environment              = var.environment
+  db_subnet_group_name     = module.networking.db_subnet_group_name
+  rds_security_group_id    = module.security_groups.database_security_group_id
+  
+  # Database Configuration
+  database_name   = var.database_name
+  master_username = var.master_username
+  
+  # Free Tier Configuration
+  instance_class        = var.rds_instance_class
+  allocated_storage     = var.rds_allocated_storage
+  backup_retention_days = var.backup_retention_days
+  
+  # Dev Settings (disable for cost savings)
+  skip_final_snapshot = var.skip_final_snapshot
+  deletion_protection = var.deletion_protection
+  apply_immediately   = true
   
   common_tags = local.common_tags
 }
