@@ -1,0 +1,293 @@
+// FinAlly Prisma Schema
+// PostgreSQL 16.10
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================
+// USERS
+// =====================================================================
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  displayName String?  @map("display_name")
+  cognitoSub  String?  @unique @map("cognito_sub")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  assets                    Asset[]
+  assetInputs               AssetInput[]
+  incomingItems             IncomingItem[]
+  expenseItems              ExpenseItem[]
+  budgets                   Budget[]
+  categoryAllocationTargets CategoryAllocationTarget[]
+  networthMaterialized      NetworthMaterialized[]
+  auditEvents               AuditEvent[]
+
+  @@map("users")
+}
+
+// =====================================================================
+// ASSET CATEGORIES (Immutable Enum-like)
+// =====================================================================
+
+model AssetCategory {
+  code      String   @id
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  assets                    Asset[]
+  categoryAllocationTargets CategoryAllocationTarget[]
+
+  @@map("asset_categories")
+}
+
+// =====================================================================
+// ASSETS
+// =====================================================================
+
+model Asset {
+  id                     String    @id @default(uuid()) @db.Uuid
+  userId                 String    @map("user_id") @db.Uuid
+  categoryId             String    @map("category_id")
+  ticker                 String?
+  assetName              String    @map("asset_name")
+  marketCap              Decimal?  @map("market_cap") @db.Decimal(24, 4)
+  marketCapSource        String?   @default("manual") @map("market_cap_source")
+  lastMarketcapSyncedAt  DateTime? @map("last_marketcap_synced_at") @db.Timestamptz(6)
+  subTargetPct           Decimal?  @map("sub_target_pct") @db.Decimal(9, 6)
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category         AssetCategory      @relation(fields: [categoryId], references: [code], onDelete: Restrict)
+  assetInputs      AssetInput[]
+  marketCapHistory MarketCapHistory[]
+
+  @@unique([userId, assetName])
+  @@index([userId, categoryId])
+  @@index([userId, ticker])
+  @@map("assets")
+}
+
+// =====================================================================
+// MARKET CAP HISTORY
+// =====================================================================
+
+model MarketCapHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  assetId   String   @map("asset_id") @db.Uuid
+  year      Int
+  month     Int
+  marketCap Decimal  @map("market_cap") @db.Decimal(24, 4)
+  source    String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, year, month])
+  @@index([assetId, year, month])
+  @@map("market_cap_history")
+}
+
+// =====================================================================
+// ASSET INPUTS (Monthly Snapshots)
+// =====================================================================
+
+model AssetInput {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  assetId   String   @map("asset_id") @db.Uuid
+  year      Int
+  month     Int
+  total     Decimal  @db.Decimal(24, 4)
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assetId, year, month])
+  @@index([userId, year, month], map: "idx_asset_inputs_user_date", type: BTree)
+  @@index([assetId])
+  @@map("asset_inputs")
+}
+
+// =====================================================================
+// INCOME CATEGORIES (Immutable Enum-like)
+// =====================================================================
+
+model IncomeCategory {
+  code      String   @id
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  incomingItems IncomingItem[]
+
+  @@map("income_categories")
+}
+
+// =====================================================================
+// INCOMING ITEMS
+// =====================================================================
+
+model IncomingItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  categoryId  String   @map("category_id")
+  year        Int
+  month       Int
+  amount      Decimal  @db.Decimal(24, 4)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category IncomeCategory @relation(fields: [categoryId], references: [code], onDelete: Restrict)
+
+  @@index([userId, year, month], map: "idx_incomings_user_date", type: BTree)
+  @@index([userId, categoryId, year, month])
+  @@map("incoming_items")
+}
+
+// =====================================================================
+// EXPENSE CATEGORIES (Immutable Enum-like)
+// =====================================================================
+
+model ExpenseCategory {
+  code      String   @id
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  expenseItems ExpenseItem[]
+  budgets      Budget[]
+
+  @@map("expense_categories")
+}
+
+// =====================================================================
+// EXPENSE ITEMS
+// =====================================================================
+
+model ExpenseItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  categoryId  String   @map("category_id")
+  year        Int
+  month       Int
+  amount      Decimal  @db.Decimal(24, 4)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category ExpenseCategory @relation(fields: [categoryId], references: [code], onDelete: Restrict)
+
+  @@index([userId, year, month], map: "idx_expenses_user_date", type: BTree)
+  @@index([userId, categoryId, year, month])
+  @@map("expense_items")
+}
+
+// =====================================================================
+// BUDGETS
+// =====================================================================
+
+model Budget {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  categoryId   String   @map("category_id")
+  year         Int
+  month        Int
+  budgetAmount Decimal  @map("budget_amount") @db.Decimal(24, 4)
+  calculated   Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category ExpenseCategory @relation(fields: [categoryId], references: [code], onDelete: Restrict)
+
+  @@unique([userId, categoryId, year, month])
+  @@index([userId, year, month], map: "idx_budgets_user_date", type: BTree)
+  @@map("budgets")
+}
+
+// =====================================================================
+// CATEGORY ALLOCATION TARGETS
+// =====================================================================
+
+model CategoryAllocationTarget {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  categoryId String   @map("category_id")
+  targetPct  Decimal  @map("target_pct") @db.Decimal(9, 6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category AssetCategory @relation(fields: [categoryId], references: [code], onDelete: Restrict)
+
+  @@unique([userId, categoryId])
+  @@index([userId])
+  @@map("category_allocation_targets")
+}
+
+// =====================================================================
+// NETWORTH MATERIALIZED (Cache)
+// =====================================================================
+
+model NetworthMaterialized {
+  userId     String   @map("user_id") @db.Uuid
+  year       Int
+  month      Int
+  netWorth   Decimal  @map("net_worth") @db.Decimal(28, 4)
+  computedAt DateTime @default(now()) @map("computed_at") @db.Timestamptz(6)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, year, month])
+  @@index([userId, year, month], map: "idx_networth_user_date", type: BTree)
+  @@map("networth_materialized")
+}
+
+// =====================================================================
+// AUDIT EVENTS
+// =====================================================================
+
+model AuditEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  eventType String   @map("event_type")
+  payload   Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt], map: "idx_audit_created_at", type: BTree)
+  @@map("audit_events")
+}
