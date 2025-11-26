@@ -39,8 +39,13 @@ variable "cognito_user_pool_id" {
   type        = string
 }
 
-variable "cognito_client_id" {
-  description = "Cognito Client ID"
+variable "cognito_web_client_id" {
+  description = "Cognito Web Client ID"
+  type        = string
+}
+
+variable "cognito_backend_client_id" {
+  description = "Cognito Backend Client ID"
   type        = string
 }
 

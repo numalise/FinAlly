@@ -35,11 +35,12 @@ resource "aws_lambda_function" "api" {
   # Environment Variables
   environment {
     variables = {
-      NODE_ENV              = var.environment
-      ENVIRONMENT           = var.environment
-      DATABASE_URL          = var.database_url
-      COGNITO_USER_POOL_ID  = var.cognito_user_pool_id
-      COGNITO_CLIENT_ID     = var.cognito_client_id
+      NODE_ENV                            = var.environment
+      ENVIRONMENT                         = var.environment
+      DATABASE_URL                        = var.database_url
+      COGNITO_USER_POOL_ID                = var.cognito_user_pool_id
+      COGNITO_WEB_CLIENT_ID               = var.cognito_web_client_id
+      COGNITO_BACKEND_CLIENT_ID           = var.cognito_backend_client_id
       AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
     }
   }

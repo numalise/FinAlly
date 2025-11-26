@@ -2,23 +2,25 @@ import { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-l
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 
 const userPoolId = process.env.COGNITO_USER_POOL_ID!;
-const clientId = process.env.COGNITO_CLIENT_ID!;
+const webClientId = process.env.COGNITO_WEB_CLIENT_ID!;
+const backendClientId = process.env.COGNITO_BACKEND_CLIENT_ID!;
 
-if (!userPoolId || !clientId) {
-  throw new Error('Missing required environment variables: COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID');
+if (!userPoolId || !webClientId || !backendClientId) {
+  throw new Error('Missing required Cognito environment variables');
 }
 
-// Create verifier instance (cached at module level)
+// Create verifier that accepts BOTH client IDs
 const verifier = CognitoJwtVerifier.create({
   userPoolId,
   tokenUse: 'access',
-  clientId,
+  clientId: [webClientId, backendClientId], // Accept both clients
 });
 
 export interface AuthContext {
   userId: string;
   email: string;
   username: string;
+  clientId: string;
 }
 
 /**
@@ -35,13 +37,14 @@ export async function verifyToken(event: APIGatewayProxyEventV2): Promise<AuthCo
 
     const token = authHeader.substring(7);
     
-    // Verify token with Cognito
+    // Verify token with Cognito (accepts both web and backend client IDs)
     const payload = await verifier.verify(token);
     
     return {
       userId: payload.sub,
       email: (payload.email as string) || '',
       username: (payload.username as string) || (payload['cognito:username'] as string) || '',
+      clientId: (payload.client_id as string) || '',
     };
   } catch (error) {
     console.error('Token verification failed:', error);

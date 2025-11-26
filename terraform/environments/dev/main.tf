@@ -162,11 +162,12 @@ module "lambda_api" {
   database_url = "postgresql://${module.database.master_username}:${module.database.master_password}@${module.database.database_address}:${module.database.database_port}/${module.database.database_name}?schema=public&sslmode=require"
 
   # Cognito Configuration
-  cognito_user_pool_id = module.cognito.user_pool_id
-  cognito_client_id    = module.cognito.web_client_id
+  cognito_user_pool_id      = module.cognito.user_pool_id
+  cognito_web_client_id     = module.cognito.web_client_id
+  cognito_backend_client_id = module.cognito.backend_client_id
 
   # Performance
-  reserved_concurrency = -1 # Unreserved for dev
+  reserved_concurrency = -1
 
   # Logging
   log_retention_days = 7
@@ -196,8 +197,8 @@ module "api_gateway" {
   # Cognito Configuration
   cognito_user_pool_id      = module.cognito.user_pool_id
   cognito_client_id         = module.cognito.web_client_id
-  cognito_backend_client_id = module.cognito.backend_client_id 
-  
+  cognito_backend_client_id = module.cognito.backend_client_id
+
   # CORS
   cors_allow_origins = ["http://localhost:3000", "https://numalistest.com"]
 
