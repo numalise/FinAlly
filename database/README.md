@@ -1,188 +1,167 @@
-# FinAlly Database
+# FinAlly Database Documentation
 
-## Overview
-PostgreSQL 16.4 database schema for personal finance and investment tracking.
+PostgreSQL 16.10 database schema for personal finance tracking.
 
-## Schema Structure
+## 📊 Schema Overview
 
-### Core Tables
-- **users** - User accounts (Cognito-mapped)
-- **asset_categories** - Macro asset classifications
-- **assets** - Individual holdings/tickers
-- **asset_inputs** - Monthly snapshot values
+**13 Core Tables:**
 
-### Cash Flow Tables
-- **income_categories** - Income classification
-- **incoming_items** - Income transactions
-- **expense_categories** - Expense classification
-- **expense_items** - Expense transactions
-- **budgets** - Monthly budget tracking
+### Users & Authentication
+- `users` - User accounts with Cognito integration
 
-### Allocation Tables
-- **category_allocation_targets** - Target allocation percentages
-- **market_cap_history** - Historical market cap tracking (optional)
+### Asset Management
+- `asset_categories` - Investment categories (stocks, ETFs, crypto, etc.)
+- `assets` - User's investment holdings
+- `asset_inputs` - Monthly snapshots of asset values
+- `market_cap_history` - Historical market cap tracking
+- `category_allocation_targets` - Target allocation percentages
 
-### Derived/Cache Tables
-- **networth_materialized** - Cached net worth calculations
-- **audit_events** - Activity audit log
+### Cash Flow
+- `income_categories` - Income source types
+- `incoming_items` - Individual income entries
+- `expense_categories` - Expense category types
+- `expense_items` - Individual expense entries
+- `budgets` - Monthly budget tracking
 
-## Schema Version
-**Current**: 001  
-**PostgreSQL**: 16.4  
-**Total Tables**: 15
+### Analytics
+- `networth_materialized` - Cached net worth calculations
+- `audit_events` - System audit log
 
-## Migrations
+### Views
+- `latest_networth` - Most recent net worth per user
 
-### Apply Initial Schema
+---
+
+## 🗂️ Seed Data
+
+### Asset Categories (8)
+- SINGLE_STOCKS - Individual stock holdings
+- ETF_BONDS - Bond ETFs
+- ETF_STOCKS - Stock ETFs
+- CRYPTO - Cryptocurrency
+- PRIVATE_EQUITY - Private equity investments
+- BUSINESS_PROFITS - Business ownership
+- REAL_ESTATE - Real estate holdings
+- CASH - Cash and equivalents
+
+### Income Categories (6)
+- SALARY - Regular salary
+- BONUS - Bonuses and commissions
+- DIVIDEND - Investment dividends
+- RENTAL - Rental income
+- DONATION - Gifts and donations
+- OTHER - Miscellaneous income
+
+### Expense Categories (8)
+- RENT - Rent and housing
+- UTILITY - Utilities and services
+- FOOD - Food and groceries
+- TRANSPORT - Transportation
+- FEES - Fees and subscriptions
+- INSURANCE - Insurance premiums
+- WELLNESS - Health and wellness
+- OTHER - Miscellaneous expenses
+
+---
+
+## 🔐 Access
+
+Database is in private subnets with no public access.
+
+### Via SSM Bastion
 ```bash
-cd scripts
-./apply_migration.sh
-```
-
-### Manual Migration
-```bash
-# Get credentials
+# Get bastion instance ID
 cd terraform/environments/dev
-SECRET_ARN=$(terraform output -raw database_secret_arn)
-SECRET_JSON=$(aws secretsmanager get-secret-value --secret-id "$SECRET_ARN" --query SecretString --output text)
-
-# Extract connection details
-DB_HOST=$(echo "$SECRET_JSON" | jq -r '.host')
-DB_USER=$(echo "$SECRET_JSON" | jq -r '.username')
-DB_PASS=$(echo "$SECRET_JSON" | jq -r '.password')
-DB_NAME=$(echo "$SECRET_JSON" | jq -r '.dbname')
+BASTION_ID=$(terraform output -raw bastion_instance_id)
 
 # Connect
-PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME"
+aws ssm start-session --target "$BASTION_ID"
 
-# Apply migration
-\i database/migrations/001_initial_schema.sql
+# Get credentials from Secrets Manager
+SECRET_ARN=$(terraform output -raw database_secret_arn)
+aws secretsmanager get-secret-value --secret-id "$SECRET_ARN"
+
+# Connect to database
+export PGPASSWORD='<password>'
+export PGSSLMODE=require
+psql -h <db-host> -U finally_admin -d finally
 ```
 
-## Prisma Integration
+---
 
-### Generate Prisma Client
+## 📝 Migrations
+
+Migrations are stored in `database/migrations/` and applied via SSM:
 ```bash
-cd database/prisma
-npx prisma generate
+cd scripts
+./apply_migration_ssm.sh
 ```
 
-### Introspect Database
-```bash
-npx prisma db pull
-```
+### Migration Files
+- `001_initial_schema.sql` - Initial schema (partial)
+- `002_missing_tables.sql` - Asset management tables
 
-### Create Migration (after schema changes)
-```bash
-npx prisma migrate dev --name description_of_changes
-```
+---
 
-## Seed Data
+## 🔍 Useful Queries
 
-The initial migration includes seed data for:
-- **Asset Categories**: 8 categories (Stocks, Bonds, Crypto, etc.)
-- **Income Categories**: 6 categories (Salary, Bonus, Dividends, etc.)
-- **Expense Categories**: 8 categories (Rent, Food, Transport, etc.)
-
-## Key Features
-
-### Automatic Timestamp Updates
-All tables with `updated_at` fields use triggers to automatically update timestamps on modifications.
-
-### Data Integrity
-- Foreign key constraints ensure referential integrity
-- Check constraints validate data ranges (years, months, percentages)
-- Unique constraints prevent duplicate entries
-
-### Performance Optimization
-- Indexes on frequently queried columns
-- Composite indexes for multi-column queries
-- Materialized view for net worth calculations
-
-### Audit Trail
-The `audit_events` table logs important user actions for compliance and debugging.
-
-## Query Examples
-
-### Get User's Net Worth for Month
+### Check Table Counts
 ```sql
-SELECT COALESCE(SUM(total), 0) AS net_worth
-FROM asset_inputs
-WHERE user_id = :user_id
-  AND year = :year
-  AND month = :month;
+SELECT COUNT(*) FROM users;
+SELECT COUNT(*) FROM assets;
+SELECT COUNT(*) FROM asset_inputs;
 ```
 
-### Get Asset Allocation by Category
+### View All Categories
 ```sql
-SELECT ac.name, SUM(ai.total) AS total_value
-FROM asset_categories ac
-LEFT JOIN assets a ON a.category_id = ac.id AND a.user_id = :user_id
-LEFT JOIN asset_inputs ai ON ai.asset_id = a.id
-  AND ai.year = :year AND ai.month = :month
-GROUP BY ac.id, ac.name;
+SELECT * FROM asset_categories ORDER BY code;
+SELECT * FROM income_categories ORDER BY code;
+SELECT * FROM expense_categories ORDER BY code;
 ```
 
-### Budget Roll-Forward
+### Latest Net Worth
 ```sql
--- Calculate next month's budget from previous month
-INSERT INTO budgets (user_id, category_id, year, month, budget_amount, calculated)
-SELECT 
-  :user_id,
-  :category_id,
-  :year,
-  :month,
-  COALESCE(prev_budget.budget_amount, 0) + 
-    (COALESCE(prev_budget.budget_amount, 0) - COALESCE(prev_expenses.total_expenses, 0)),
-  true
-FROM (
-  SELECT budget_amount FROM budgets 
-  WHERE user_id = :user_id AND category_id = :category_id 
-    AND year = :prev_year AND month = :prev_month
-) prev_budget
-CROSS JOIN (
-  SELECT COALESCE(SUM(amount), 0) AS total_expenses
-  FROM expense_items
-  WHERE user_id = :user_id AND category_id = :category_id
-    AND year = :prev_year AND month = :prev_month
-) prev_expenses
-ON CONFLICT (user_id, category_id, year, month) DO NOTHING;
+SELECT * FROM latest_networth;
 ```
 
-## Backup & Recovery
-
-### Create Backup
-```bash
-pg_dump -h $DB_HOST -U $DB_USER -d $DB_NAME -F c -f backup_$(date +%Y%m%d).dump
-```
-
-### Restore Backup
-```bash
-pg_restore -h $DB_HOST -U $DB_USER -d $DB_NAME backup_20250125.dump
-```
-
-## Monitoring
-
-### Check Table Sizes
+### Audit Log
 ```sql
-SELECT 
-  tablename,
-  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
-FROM pg_tables
-WHERE schemaname = 'public'
-ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+SELECT * FROM audit_events ORDER BY created_at DESC LIMIT 10;
 ```
 
-### Check Index Usage
-```sql
-SELECT 
-  schemaname,
-  tablename,
-  indexname,
-  idx_scan,
-  idx_tup_read,
-  idx_tup_fetch
-FROM pg_stat_user_indexes
-WHERE schemaname = 'public'
-ORDER BY idx_scan DESC;
-```
+---
+
+## 🛠️ Maintenance
+
+### Backup
+RDS automated backups enabled:
+- Retention: 1 day (dev), 7 days (prod)
+- Backup window: 03:00-04:00 UTC
+
+### Monitoring
+CloudWatch alarms configured for:
+- CPU > 80%
+- Connections > 50
+- Free storage < 2GB
+
+---
+
+## 📈 Performance
+
+### Indexes
+- Composite indexes on (user_id, year DESC, month DESC) for time-series queries
+- B-tree indexes on foreign keys
+- Unique constraints create implicit indexes
+
+### Triggers
+- `updated_at` auto-update triggers on all tables with timestamps
+
+---
+
+## 🔒 Security
+
+- SSL/TLS required for all connections (`PGSSLMODE=require`)
+- Passwords stored in AWS Secrets Manager
+- Cascade delete for user-owned data
+- Restrict delete on category tables
+- Audit logging for sensitive operations
