@@ -233,13 +233,15 @@ resource "aws_cognito_user_pool_client" "backend_client" {
   name         = "${var.project_name}-${var.environment}-backend-client"
   user_pool_id = aws_cognito_user_pool.main.id
 
-  # No OAuth flows for backend
-  generate_secret = true
+  # Enable client secret for backend
+  generate_secret = false
 
-  # Explicit auth flows
+  # Explicit auth flows - CRITICAL: Include all needed flows
   explicit_auth_flows = [
     "ALLOW_ADMIN_USER_PASSWORD_AUTH",
-    "ALLOW_REFRESH_TOKEN_AUTH"
+    "ALLOW_USER_PASSWORD_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_SRP_AUTH"
   ]
 
   # Token Validity
@@ -252,6 +254,21 @@ resource "aws_cognito_user_pool_client" "backend_client" {
     id_token      = "hours"
     refresh_token = "days"
   }
+
+  # Read/Write Attributes
+  read_attributes = [
+    "email",
+    "email_verified",
+    "name",
+    "preferred_username",
+    "sub"
+  ]
+
+  write_attributes = [
+    "email",
+    "name",
+    "preferred_username"
+  ]
 
   prevent_user_existence_errors = "ENABLED"
   enable_token_revocation       = true
@@ -288,11 +305,3 @@ resource "aws_ssm_parameter" "cognito_domain" {
   tags = var.common_tags
 }
 
-resource "aws_ssm_parameter" "cognito_backend_client_secret" {
-  name        = "/${var.project_name}/${var.environment}/cognito/backend-client-secret"
-  description = "Cognito Backend Client Secret"
-  type        = "SecureString"
-  value       = aws_cognito_user_pool_client.backend_client.client_secret
-
-  tags = var.common_tags
-}

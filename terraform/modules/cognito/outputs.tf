@@ -29,12 +29,6 @@ output "backend_client_id" {
   value       = aws_cognito_user_pool_client.backend_client.id
 }
 
-output "backend_client_secret" {
-  description = "Cognito Backend Client Secret"
-  value       = aws_cognito_user_pool_client.backend_client.client_secret
-  sensitive   = true
-}
-
 output "cognito_domain" {
   description = "Cognito Hosted UI Domain"
   value       = aws_cognito_user_pool_domain.main.domain

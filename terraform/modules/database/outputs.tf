@@ -1,24 +1,28 @@
-output "instance_id" {
+# =====================================================================
+# Database Outputs
+# =====================================================================
+
+output "database_id" {
   description = "RDS instance identifier"
   value       = aws_db_instance.postgresql.id
 }
 
-output "instance_arn" {
+output "database_arn" {
   description = "RDS instance ARN"
   value       = aws_db_instance.postgresql.arn
 }
 
-output "endpoint" {
-  description = "RDS instance endpoint (host:port)"
-  value       = aws_db_instance.postgresql.endpoint
-}
-
-output "address" {
-  description = "RDS instance address (hostname only)"
+output "database_address" {
+  description = "RDS instance hostname"
   value       = aws_db_instance.postgresql.address
 }
 
-output "port" {
+output "database_endpoint" {
+  description = "RDS instance endpoint"
+  value       = aws_db_instance.postgresql.endpoint
+}
+
+output "database_port" {
   description = "RDS instance port"
   value       = aws_db_instance.postgresql.port
 }
@@ -29,28 +33,32 @@ output "database_name" {
 }
 
 output "master_username" {
-  description = "Master username"
-  value       = aws_db_instance.postgresql.username
+  description = "Database master username"
+  value       = var.master_username
+}
+
+output "master_password" {
+  description = "Database master password"
+  value       = random_password.master_password.result
   sensitive   = true
 }
 
-output "secret_arn" {
-  description = "Secrets Manager secret ARN containing database credentials"
+output "database_secret_arn" {
+  description = "Secrets Manager secret ARN for database credentials"
   value       = aws_secretsmanager_secret.rds_credentials.arn
 }
 
-output "secret_name" {
-  description = "Secrets Manager secret name"
+output "database_secret_name" {
+  description = "Secrets Manager secret name for database credentials"
   value       = aws_secretsmanager_secret.rds_credentials.name
 }
 
 output "parameter_group_name" {
-  description = "Parameter group name"
+  description = "Database parameter group name"
   value       = aws_db_parameter_group.postgresql.name
 }
 
-output "connection_string" {
-  description = "PostgreSQL connection string (password not included)"
-  value       = "postgresql://${aws_db_instance.postgresql.username}:PASSWORD@${aws_db_instance.postgresql.address}:${aws_db_instance.postgresql.port}/${aws_db_instance.postgresql.db_name}"
-  sensitive   = true
+output "security_group_id" {
+  description = "Database security group ID"
+  value       = var.rds_security_group_id
 }
