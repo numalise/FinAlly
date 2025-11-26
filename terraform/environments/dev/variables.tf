@@ -138,10 +138,7 @@ variable "bastion_instance_type" {
   default     = "t3.micro"
 }
 
-# =====================================================================
 # Cognito Variables
-# =====================================================================
-
 variable "enable_mfa" {
   description = "Enable optional MFA for Cognito"
   type        = bool
