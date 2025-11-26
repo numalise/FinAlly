@@ -98,3 +98,32 @@ output "bastion_security_group_id" {
   description = "Bastion security group ID"
   value       = module.ssm_bastion.security_group_id
 }
+
+# =====================================================================
+# Cognito Outputs
+# =====================================================================
+
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  value       = module.cognito.user_pool_id
+}
+
+output "cognito_web_client_id" {
+  description = "Cognito Web Client ID"
+  value       = module.cognito.web_client_id
+}
+
+output "cognito_domain" {
+  description = "Cognito Hosted UI Domain"
+  value       = module.cognito.cognito_domain
+}
+
+output "cognito_hosted_ui_url" {
+  description = "Cognito Hosted UI URL"
+  value       = module.cognito.cognito_hosted_ui_url
+}
+
+output "cognito_login_url" {
+  description = "Cognito Login URL"
+  value       = module.cognito.login_url
+}

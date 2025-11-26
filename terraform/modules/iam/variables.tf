@@ -19,12 +19,6 @@ variable "kms_key_arn" {
   default     = ""
 }
 
-variable "cognito_user_pool_arn" {
-  description = "Cognito User Pool ARN (optional, can be added later)"
-  type        = string
-  default     = ""
-}
-
 variable "database_arn" {
   description = "RDS database ARN (optional, for RDS Data API)"
   type        = string
@@ -47,4 +41,10 @@ variable "common_tags" {
   description = "Common tags for all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "cognito_user_pool_arn" {
+  description = "Cognito User Pool ARN"
+  type        = string
+  default     = ""
 }

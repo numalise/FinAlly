@@ -109,3 +109,35 @@ module "ssm_bastion" {
 
   common_tags = local.common_tags
 }
+
+# =====================================================================
+# Cognito Module (Authentication)
+# =====================================================================
+
+module "cognito" {
+  source = "../../modules/cognito"
+
+  project_name = var.project_name
+  environment  = var.environment
+
+  # OAuth Configuration
+  callback_urls = var.cognito_callback_urls
+  logout_urls   = var.cognito_logout_urls
+
+  # Security Features
+  enable_mfa               = var.enable_mfa
+  enable_advanced_security = false # Disable for dev to save costs
+
+  # Google OAuth (optional)
+  enable_google_oauth  = var.enable_google_oauth
+  google_client_id     = var.google_client_id
+  google_client_secret = var.google_client_secret
+
+  # Lambda Triggers (will add in Phase 4)
+  post_confirmation_lambda_arn = ""
+
+  # Deletion Protection (disable for dev)
+  deletion_protection = false
+
+  common_tags = local.common_tags
+}

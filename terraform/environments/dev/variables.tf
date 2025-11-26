@@ -137,3 +137,44 @@ variable "bastion_instance_type" {
   type        = string
   default     = "t3.micro"
 }
+
+# =====================================================================
+# Cognito Variables
+# =====================================================================
+
+variable "enable_mfa" {
+  description = "Enable optional MFA for Cognito"
+  type        = bool
+  default     = false
+}
+
+variable "enable_google_oauth" {
+  description = "Enable Google OAuth"
+  type        = bool
+  default     = false
+}
+
+variable "google_client_id" {
+  description = "Google OAuth Client ID"
+  type        = string
+  default     = ""
+}
+
+variable "google_client_secret" {
+  description = "Google OAuth Client Secret"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "cognito_callback_urls" {
+  description = "Cognito callback URLs"
+  type        = list(string)
+  default     = ["http://localhost:3000/auth/callback"]
+}
+
+variable "cognito_logout_urls" {
+  description = "Cognito logout URLs"
+  type        = list(string)
+  default     = ["http://localhost:3000"]
+}
