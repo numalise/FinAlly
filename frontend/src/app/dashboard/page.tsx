@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Heading, Text, SimpleGrid, Card, CardBody, Stat, StatLabel, StatNumber, StatHelpText } from '@chakra-ui/react';
+import { Box, Heading, SimpleGrid, Card, CardBody, Stat, StatLabel, StatNumber, StatHelpText } from '@chakra-ui/react';
 import MainLayout from '@/components/layout/MainLayout';
 
 export default function DashboardPage() {
@@ -14,7 +14,7 @@ export default function DashboardPage() {
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Net Worth</StatLabel>
-                <StatNumber>€125,430</StatNumber>
+                <StatNumber color="text.primary">€125,430</StatNumber>
                 <StatHelpText color="success.500">+4.2% this month</StatHelpText>
               </Stat>
             </CardBody>
@@ -24,7 +24,7 @@ export default function DashboardPage() {
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Monthly Change</StatLabel>
-                <StatNumber>+€5,240</StatNumber>
+                <StatNumber color="text.primary">+€5,240</StatNumber>
                 <StatHelpText color="success.500">Above average</StatHelpText>
               </Stat>
             </CardBody>
@@ -34,8 +34,8 @@ export default function DashboardPage() {
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Savings Rate</StatLabel>
-                <StatNumber>32%</StatNumber>
-                <StatHelpText>Target: 30%</StatHelpText>
+                <StatNumber color="text.primary">32%</StatNumber>
+                <StatHelpText color="text.secondary">Target: 30%</StatHelpText>
               </Stat>
             </CardBody>
           </Card>
@@ -44,16 +44,12 @@ export default function DashboardPage() {
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Assets</StatLabel>
-                <StatNumber>12</StatNumber>
-                <StatHelpText>Across 5 categories</StatHelpText>
+                <StatNumber color="text.primary">12</StatNumber>
+                <StatHelpText color="text.secondary">Across 5 categories</StatHelpText>
               </Stat>
             </CardBody>
           </Card>
         </SimpleGrid>
-
-        <Text color="text.secondary">
-          More dashboard components coming in Step 5.2...
-        </Text>
       </Box>
     </MainLayout>
   );
