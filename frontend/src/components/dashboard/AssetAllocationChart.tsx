@@ -16,7 +16,6 @@ interface AssetAllocationProps {
   data: AssetData[];
 }
 
-// Blue gradient palette
 const BLUE_PALETTE = [
   '#2196f3',
   '#1e88e5',
@@ -25,7 +24,6 @@ const BLUE_PALETTE = [
   '#0d47a1',
 ];
 
-// Custom tooltip component
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
@@ -81,7 +79,7 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
           </Box>
         </Box>
 
-        {/* Detailed Table */}
+        {/* Detailed Table with Value Deltas */}
         <Box w="full" overflowX="auto">
           <Table variant="simple" size="sm">
             <Thead>
@@ -89,16 +87,18 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                 <Th>Category</Th>
                 <Th isNumeric>Current Value</Th>
                 <Th isNumeric>Current %</Th>
+                <Th isNumeric>Target Value</Th>
                 <Th isNumeric>Target %</Th>
                 <Th isNumeric>Delta</Th>
               </Tr>
             </Thead>
             <Tbody>
               {data.map((item, index) => {
-                const delta = item.percentage - item.targetPercentage;
-                const deltaColor = Math.abs(delta) < 1 
+                const deltaPercent = item.percentage - item.targetPercentage;
+                const deltaValue = item.value - item.target;
+                const deltaColor = Math.abs(deltaPercent) < 1 
                   ? 'text.secondary' 
-                  : delta > 0 
+                  : deltaPercent > 0 
                     ? 'success.500' 
                     : 'warning.500';
 
@@ -124,13 +124,23 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                     </Td>
                     <Td isNumeric>
                       <Text color="text.secondary">
+                        {formatCurrency(item.target)}
+                      </Text>
+                    </Td>
+                    <Td isNumeric>
+                      <Text color="text.secondary">
                         {item.targetPercentage}%
                       </Text>
                     </Td>
                     <Td isNumeric>
-                      <Text color={deltaColor} fontWeight="medium">
-                        {delta > 0 ? '+' : ''}{delta.toFixed(1)}%
-                      </Text>
+                      <VStack spacing={0} align="end">
+                        <Text color={deltaColor} fontWeight="medium" fontSize="sm">
+                          {deltaPercent > 0 ? '+' : ''}{deltaPercent.toFixed(1)}%
+                        </Text>
+                        <Text color={deltaColor} fontSize="xs">
+                          {deltaValue > 0 ? '+' : ''}{formatCurrency(Math.abs(deltaValue))}
+                        </Text>
+                      </VStack>
                     </Td>
                   </Tr>
                 );
@@ -146,6 +156,11 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                 </Td>
                 <Td isNumeric>
                   <Text color="text.primary">100%</Text>
+                </Td>
+                <Td isNumeric>
+                  <Text color="text.secondary">
+                    {formatCurrency(totalValue)}
+                  </Text>
                 </Td>
                 <Td isNumeric>
                   <Text color="text.secondary">100%</Text>
