@@ -46,11 +46,9 @@ export default function AllocationPage() {
 
   const isPositiveChange = parseFloat(totalChangePercent) >= 0;
 
-  // Separate Cash from other categories
   const cashCategory = categories.find(c => c.category === 'CASH');
   const otherCategories = categories.filter(c => c.category !== 'CASH');
 
-  // Map categories to chart data keys
   const categoryChartData = categories.map((cat) => ({
     category: cat.category,
     categoryName: cat.categoryName,
@@ -70,7 +68,6 @@ export default function AllocationPage() {
           </Text>
         </Box>
 
-        {/* Summary Stats */}
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
           <Card>
             <CardBody>
@@ -116,7 +113,7 @@ export default function AllocationPage() {
           </Card>
         </SimpleGrid>
 
-        {/* Cash Liquidity - Separate Section */}
+        {/* Cash Liquidity - No Card Wrapper */}
         {cashCategory && (
           <Box>
             <Heading size="md" mb={4} color="text.primary">
@@ -131,7 +128,6 @@ export default function AllocationPage() {
 
         <Divider />
 
-        {/* Investment Categories */}
         <Box>
           <Heading size="md" mb={4} color="text.primary">
             Investment Categories
@@ -147,7 +143,6 @@ export default function AllocationPage() {
           </SimpleGrid>
         </Box>
 
-        {/* Historical Allocation Trend */}
         <Card>
           <CardBody>
             <AllocationHistoryChart
@@ -158,7 +153,6 @@ export default function AllocationPage() {
         </Card>
       </VStack>
 
-      {/* Category Detail Modal */}
       <CategoryDetailModal
         isOpen={isOpen}
         onClose={onClose}

@@ -48,6 +48,7 @@ interface CategoryAssetFormProps {
   onSave: (assetId: string, value: number, notes?: string) => void;
   onAdd: (category: string, name: string, ticker?: string) => void;
   onDelete: (assetId: string) => void;
+  onEditAsset: (assetId: string, name: string, ticker?: string) => void;
   requiresTicker?: boolean;
 }
 
@@ -58,23 +59,36 @@ export default function CategoryAssetForm({
   onSave,
   onAdd,
   onDelete,
+  onEditAsset,
   requiresTicker = false,
 }: CategoryAssetFormProps) {
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
+  const { isOpen: isEditAssetOpen, onOpen: onEditAssetOpen, onClose: onEditAssetClose } = useDisclosure();
   
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editValue, setEditValue] = useState('');
   const [editNotes, setEditNotes] = useState('');
   
+  const [editingAssetDetails, setEditingAssetDetails] = useState<Asset | null>(null);
+  const [editAssetName, setEditAssetName] = useState('');
+  const [editAssetTicker, setEditAssetTicker] = useState('');
+  
   const [newName, setNewName] = useState('');
   const [newTicker, setNewTicker] = useState('');
 
-  const handleEdit = (asset: Asset) => {
+  const handleEditValue = (asset: Asset) => {
     setEditingAsset(asset);
     setEditValue(asset.currentValue?.toString() || '');
     setEditNotes(asset.notes || '');
     onEditOpen();
+  };
+
+  const handleEditAssetDetails = (asset: Asset) => {
+    setEditingAssetDetails(asset);
+    setEditAssetName(asset.name);
+    setEditAssetTicker(asset.ticker || '');
+    onEditAssetOpen();
   };
 
   const handleSaveEdit = () => {
@@ -84,6 +98,16 @@ export default function CategoryAssetForm({
       setEditingAsset(null);
       setEditValue('');
       setEditNotes('');
+    }
+  };
+
+  const handleSaveAssetDetails = () => {
+    if (editingAssetDetails && editAssetName) {
+      onEditAsset(editingAssetDetails.id, editAssetName, editAssetTicker || undefined);
+      onEditAssetClose();
+      setEditingAssetDetails(null);
+      setEditAssetName('');
+      setEditAssetTicker('');
     }
   };
 
@@ -124,23 +148,23 @@ export default function CategoryAssetForm({
         <Table variant="simple" size="sm">
           <Thead>
             <Tr>
-              <Th>Asset Name</Th>
-              {requiresTicker && <Th>Ticker</Th>}
-              <Th isNumeric>Value</Th>
-              <Th>Notes</Th>
-              <Th>Actions</Th>
+              <Th width="25%">Asset Name</Th>
+              {requiresTicker && <Th width="15%">Ticker</Th>}
+              <Th width="20%" isNumeric>Value</Th>
+              <Th width="25%">Notes</Th>
+              <Th width="15%">Actions</Th>
             </Tr>
           </Thead>
           <Tbody>
             {assets.map((asset) => (
               <Tr key={asset.id}>
-                <Td>
+                <Td width="25%">
                   <Text color="text.primary" fontWeight="medium">
                     {asset.name}
                   </Text>
                 </Td>
                 {requiresTicker && (
-                  <Td>
+                  <Td width="15%">
                     {asset.ticker ? (
                       <Badge colorScheme="blue" variant="subtle">
                         {asset.ticker}
@@ -150,7 +174,7 @@ export default function CategoryAssetForm({
                     )}
                   </Td>
                 )}
-                <Td isNumeric>
+                <Td width="20%" isNumeric>
                   <Text 
                     color={asset.currentValue ? "text.primary" : "text.tertiary"} 
                     fontWeight={asset.currentValue ? "medium" : "normal"}
@@ -158,26 +182,35 @@ export default function CategoryAssetForm({
                     {asset.currentValue ? formatCurrency(asset.currentValue) : 'Not set'}
                   </Text>
                 </Td>
-                <Td>
-                  <Text color="text.secondary" fontSize="xs" noOfLines={1} maxW="200px">
+                <Td width="25%">
+                  <Text color="text.secondary" fontSize="xs" noOfLines={1}>
                     {asset.notes || '-'}
                   </Text>
                 </Td>
-                <Td>
+                <Td width="15%">
                   <HStack spacing={1}>
                     <IconButton
-                      aria-label="Edit"
+                      aria-label="Edit details"
                       icon={<FiEdit2 />}
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleEdit(asset)}
+                      color="blue.400"
+                      onClick={() => handleEditAssetDetails(asset)}
+                    />
+                    <IconButton
+                      aria-label="Edit value"
+                      icon={<FiSave />}
+                      size="sm"
+                      variant="ghost"
+                      color="green.400"
+                      onClick={() => handleEditValue(asset)}
                     />
                     <IconButton
                       aria-label="Delete"
                       icon={<FiTrash2 />}
                       size="sm"
                       variant="ghost"
-                      colorScheme="red"
+                      color="red.400"
                       onClick={() => onDelete(asset.id)}
                     />
                   </HStack>
@@ -193,7 +226,7 @@ export default function CategoryAssetForm({
         <ModalOverlay />
         <ModalContent bg="background.secondary">
           <ModalHeader color="text.primary">
-            Edit {editingAsset?.name}
+            Edit Value: {editingAsset?.name}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
@@ -238,6 +271,64 @@ export default function CategoryAssetForm({
                   leftIcon={<FiSave />}
                   onClick={handleSaveEdit}
                   isDisabled={!editValue}
+                >
+                  Save
+                </Button>
+              </HStack>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Edit Asset Details Modal */}
+      <Modal isOpen={isEditAssetOpen} onClose={onEditAssetClose}>
+        <ModalOverlay />
+        <ModalContent bg="background.secondary">
+          <ModalHeader color="text.primary">
+            Edit Asset Details
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <VStack spacing={4}>
+              <FormControl>
+                <FormLabel color="text.secondary">Asset Name</FormLabel>
+                <Input
+                  value={editAssetName}
+                  onChange={(e) => setEditAssetName(e.target.value)}
+                  placeholder="Enter asset name"
+                  bg="background.tertiary"
+                  color="text.primary"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ borderColor: 'whiteAlpha.300' }}
+                  _focus={{ borderColor: 'brand.500' }}
+                />
+              </FormControl>
+
+              {requiresTicker && (
+                <FormControl>
+                  <FormLabel color="text.secondary">Ticker (optional)</FormLabel>
+                  <Input
+                    value={editAssetTicker}
+                    onChange={(e) => setEditAssetTicker(e.target.value.toUpperCase())}
+                    placeholder="e.g., AAPL"
+                    bg="background.tertiary"
+                    color="text.primary"
+                    borderColor="whiteAlpha.200"
+                    _hover={{ borderColor: 'whiteAlpha.300' }}
+                    _focus={{ borderColor: 'brand.500' }}
+                  />
+                </FormControl>
+              )}
+
+              <HStack spacing={3} w="full" justify="flex-end">
+                <Button variant="ghost" onClick={onEditAssetClose}>
+                  Cancel
+                </Button>
+                <Button
+                  colorScheme="blue"
+                  leftIcon={<FiSave />}
+                  onClick={handleSaveAssetDetails}
+                  isDisabled={!editAssetName}
                 >
                   Save
                 </Button>

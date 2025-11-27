@@ -128,14 +128,38 @@ export default function CashFlowInputSection({
         </HStack>
       </HStack>
 
-      <Tabs colorScheme="blue" index={activeTab} onChange={setActiveTab}>
-        <TabList>
-          <Tab>Income ({incomeItems.length})</Tab>
-          <Tab>Expenses ({expenseItems.length})</Tab>
+      <Tabs 
+        colorScheme="blue" 
+        index={activeTab} 
+        onChange={setActiveTab}
+        variant="enclosed"
+      >
+        <TabList borderColor="whiteAlpha.200">
+          <Tab 
+            color="text.secondary"
+            _selected={{ 
+              color: 'text.primary', 
+              bg: 'background.tertiary',
+              borderColor: 'whiteAlpha.200',
+              borderBottomColor: 'background.tertiary'
+            }}
+          >
+            Income ({incomeItems.length})
+          </Tab>
+          <Tab 
+            color="text.secondary"
+            _selected={{ 
+              color: 'text.primary', 
+              bg: 'background.tertiary',
+              borderColor: 'whiteAlpha.200',
+              borderBottomColor: 'background.tertiary'
+            }}
+          >
+            Expenses ({expenseItems.length})
+          </Tab>
         </TabList>
 
         <TabPanels>
-          {/* Income Tab */}
           <TabPanel px={0}>
             <VStack spacing={4} align="stretch">
               <HStack justify="space-between">
@@ -187,7 +211,7 @@ export default function CashFlowInputSection({
                               icon={<FiTrash2 />}
                               size="sm"
                               variant="ghost"
-                              colorScheme="red"
+                              color="red.400"
                               onClick={() => onDeleteIncome(item.id)}
                             />
                           </Td>
@@ -204,7 +228,6 @@ export default function CashFlowInputSection({
             </VStack>
           </TabPanel>
 
-          {/* Expenses Tab */}
           <TabPanel px={0}>
             <VStack spacing={4} align="stretch">
               <HStack justify="space-between">
@@ -256,7 +279,7 @@ export default function CashFlowInputSection({
                               icon={<FiTrash2 />}
                               size="sm"
                               variant="ghost"
-                              colorScheme="red"
+                              color="red.400"
                               onClick={() => onDeleteExpense(item.id)}
                             />
                           </Td>
@@ -275,7 +298,6 @@ export default function CashFlowInputSection({
         </TabPanels>
       </Tabs>
 
-      {/* Add/Edit Modal */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent bg="background.secondary">

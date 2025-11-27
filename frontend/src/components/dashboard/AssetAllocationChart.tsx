@@ -1,9 +1,10 @@
 'use client';
 
-import { Box, Heading, VStack, HStack, Text, Table, Thead, Tbody, Tr, Th, Td } from '@chakra-ui/react';
+import { Box, Heading, VStack, HStack, Text, Table, Thead, Tbody, Tr, Th, Td, Button } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatCurrency } from '@/utils/formatters';
-import { FiPlus, FiMinus } from 'react-icons/fi';
+import { FiPlus, FiMinus, FiArrowRight } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
 
 interface AssetData {
   category: string;
@@ -49,16 +50,27 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function AssetAllocationChart({ data }: AssetAllocationProps) {
+  const router = useRouter();
   const totalValue = data.reduce((sum, item) => sum + item.value, 0);
 
   return (
     <Box>
-      <Heading size="md" mb={6} color="text.primary">
-        Asset Allocation
-      </Heading>
+      <HStack justify="space-between" mb={6}>
+        <Heading size="md" color="text.primary">
+          Asset Allocation
+        </Heading>
+        <Button
+          rightIcon={<FiArrowRight />}
+          size="sm"
+          colorScheme="blue"
+          variant="ghost"
+          onClick={() => router.push('/allocation')}
+        >
+          View Details
+        </Button>
+      </HStack>
       
       <VStack spacing={8}>
-        {/* Centered Pie Chart */}
         <Box w="full" display="flex" justifyContent="center">
           <Box w={{ base: '100%', md: '500px' }} h="400px">
             <ResponsiveContainer width="100%" height="100%">
@@ -83,7 +95,6 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
           </Box>
         </Box>
 
-        {/* Detailed Table with Correct Delta Logic */}
         <Box w="full" overflowX="auto">
           <Table variant="simple" size="sm">
             <Thead>
@@ -101,7 +112,6 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                 const deltaValue = item.value - item.target;
                 const deltaPercent = item.percentage - item.targetPercentage;
                 
-                // Delta logic: positive = over-allocated (orange/remove), negative = under-allocated (blue/add)
                 const isOver = deltaValue > 0;
                 const isUnder = deltaValue < 0;
                 const isOnTarget = Math.abs(deltaPercent) < 1;

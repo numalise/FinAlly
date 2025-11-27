@@ -33,6 +33,7 @@ export default function InputPage() {
     incomeItems,
     expenseItems,
     handleSaveAsset,
+    handleEditAsset,
     handleAddAsset,
     handleDeleteAsset,
     handleSaveIncome,
@@ -41,7 +42,6 @@ export default function InputPage() {
     handleDeleteExpense,
   } = useInputData(year, month);
 
-  // Group assets by category
   const assetsByCategory = {
     SINGLE_STOCKS: assets.filter(a => a.category === 'SINGLE_STOCKS'),
     ETF_STOCKS: assets.filter(a => a.category === 'ETF_STOCKS'),
@@ -68,7 +68,6 @@ export default function InputPage() {
   return (
     <MainLayout>
       <VStack spacing={8} align="stretch">
-        {/* Header */}
         <HStack justify="space-between" align="start">
           <Box>
             <Heading size="lg" color="text.primary" mb={2}>
@@ -81,7 +80,6 @@ export default function InputPage() {
           <MonthSelector year={year} month={month} onChange={handleMonthChange} />
         </HStack>
 
-        {/* Summary Stats */}
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
           <Card>
             <CardBody>
@@ -140,125 +138,41 @@ export default function InputPage() {
           </Card>
         </SimpleGrid>
 
-        {/* Asset Category Forms */}
         <Box>
           <Heading size="md" mb={4} color="text.primary">
             Asset Values
           </Heading>
           <VStack spacing={6} align="stretch">
-            <Card>
-              <CardBody>
-                <CategoryAssetForm
-                  categoryCode="SINGLE_STOCKS"
-                  categoryName="Single Stocks"
-                  assets={assetsByCategory.SINGLE_STOCKS}
-                  onSave={handleSaveAsset}
-                  onAdd={handleAddAsset}
-                  onDelete={handleDeleteAsset}
-                  requiresTicker
-                />
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <CategoryAssetForm
-                  categoryCode="ETF_STOCKS"
-                  categoryName="ETF Stocks"
-                  assets={assetsByCategory.ETF_STOCKS}
-                  onSave={handleSaveAsset}
-                  onAdd={handleAddAsset}
-                  onDelete={handleDeleteAsset}
-                  requiresTicker
-                />
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <CategoryAssetForm
-                  categoryCode="ETF_BONDS"
-                  categoryName="ETF Bonds"
-                  assets={assetsByCategory.ETF_BONDS}
-                  onSave={handleSaveAsset}
-                  onAdd={handleAddAsset}
-                  onDelete={handleDeleteAsset}
-                  requiresTicker
-                />
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <CategoryAssetForm
-                  categoryCode="CRYPTO"
-                  categoryName="Crypto"
-                  assets={assetsByCategory.CRYPTO}
-                  onSave={handleSaveAsset}
-                  onAdd={handleAddAsset}
-                  onDelete={handleDeleteAsset}
-                  requiresTicker
-                />
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <CategoryAssetForm
-                  categoryCode="PRIVATE_EQUITY"
-                  categoryName="Private Equity"
-                  assets={assetsByCategory.PRIVATE_EQUITY}
-                  onSave={handleSaveAsset}
-                  onAdd={handleAddAsset}
-                  onDelete={handleDeleteAsset}
-                />
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <CategoryAssetForm
-                  categoryCode="BUSINESS_PROFITS"
-                  categoryName="Business Profits"
-                  assets={assetsByCategory.BUSINESS_PROFITS}
-                  onSave={handleSaveAsset}
-                  onAdd={handleAddAsset}
-                  onDelete={handleDeleteAsset}
-                />
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <CategoryAssetForm
-                  categoryCode="REAL_ESTATE"
-                  categoryName="Real Estate"
-                  assets={assetsByCategory.REAL_ESTATE}
-                  onSave={handleSaveAsset}
-                  onAdd={handleAddAsset}
-                  onDelete={handleDeleteAsset}
-                />
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <CategoryAssetForm
-                  categoryCode="CASH"
-                  categoryName="Cash Liquidity"
-                  assets={assetsByCategory.CASH}
-                  onSave={handleSaveAsset}
-                  onAdd={handleAddAsset}
-                  onDelete={handleDeleteAsset}
-                />
-              </CardBody>
-            </Card>
+            {[
+              { code: 'SINGLE_STOCKS', name: 'Single Stocks', requiresTicker: true },
+              { code: 'ETF_STOCKS', name: 'ETF Stocks', requiresTicker: true },
+              { code: 'ETF_BONDS', name: 'ETF Bonds', requiresTicker: true },
+              { code: 'CRYPTO', name: 'Crypto', requiresTicker: true },
+              { code: 'PRIVATE_EQUITY', name: 'Private Equity', requiresTicker: false },
+              { code: 'BUSINESS_PROFITS', name: 'Business Profits', requiresTicker: false },
+              { code: 'REAL_ESTATE', name: 'Real Estate', requiresTicker: false },
+              { code: 'CASH', name: 'Cash Liquidity', requiresTicker: false },
+            ].map(({ code, name, requiresTicker }) => (
+              <Card key={code}>
+                <CardBody>
+                  <CategoryAssetForm
+                    categoryCode={code}
+                    categoryName={name}
+                    assets={assetsByCategory[code as keyof typeof assetsByCategory]}
+                    onSave={handleSaveAsset}
+                    onEditAsset={handleEditAsset}
+                    onAdd={handleAddAsset}
+                    onDelete={handleDeleteAsset}
+                    requiresTicker={requiresTicker}
+                  />
+                </CardBody>
+              </Card>
+            ))}
           </VStack>
         </Box>
 
         <Divider />
 
-        {/* Cash Flow */}
         <Card>
           <CardBody>
             <CashFlowInputSection
