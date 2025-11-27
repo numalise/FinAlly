@@ -18,13 +18,12 @@ import {
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import MonthSelector from '@/components/input/MonthSelector';
-import AssetInputSection from '@/components/input/AssetInputSection';
+import CategoryAssetForm from '@/components/input/CategoryAssetForm';
 import CashFlowInputSection from '@/components/input/CashFlowInputSection';
 import { useInputData } from '@/hooks/useInputData';
 import { formatCurrency } from '@/utils/formatters';
 
 export default function InputPage() {
-  // Default to current month
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -34,13 +33,26 @@ export default function InputPage() {
     incomeItems,
     expenseItems,
     handleSaveAsset,
+    handleAddAsset,
+    handleDeleteAsset,
     handleSaveIncome,
     handleSaveExpense,
     handleDeleteIncome,
     handleDeleteExpense,
   } = useInputData(year, month);
 
-  // Calculate summary stats
+  // Group assets by category
+  const assetsByCategory = {
+    SINGLE_STOCKS: assets.filter(a => a.category === 'SINGLE_STOCKS'),
+    ETF_STOCKS: assets.filter(a => a.category === 'ETF_STOCKS'),
+    ETF_BONDS: assets.filter(a => a.category === 'ETF_BONDS'),
+    CRYPTO: assets.filter(a => a.category === 'CRYPTO'),
+    PRIVATE_EQUITY: assets.filter(a => a.category === 'PRIVATE_EQUITY'),
+    BUSINESS_PROFITS: assets.filter(a => a.category === 'BUSINESS_PROFITS'),
+    REAL_ESTATE: assets.filter(a => a.category === 'REAL_ESTATE'),
+    CASH: assets.filter(a => a.category === 'CASH'),
+  };
+
   const totalAssetValue = assets.reduce((sum, asset) => sum + (asset.currentValue || 0), 0);
   const totalIncome = incomeItems.reduce((sum, item) => sum + item.amount, 0);
   const totalExpenses = expenseItems.reduce((sum, item) => sum + item.amount, 0);
@@ -51,27 +63,23 @@ export default function InputPage() {
   const handleMonthChange = (newYear: number, newMonth: number) => {
     setYear(newYear);
     setMonth(newMonth);
-    // TODO: Trigger data fetch for new month
-    console.log('Month changed:', { newYear, newMonth });
   };
 
   return (
     <MainLayout>
       <VStack spacing={8} align="stretch">
         {/* Header */}
-        <Box>
-          <HStack justify="space-between" align="start" mb={2}>
-            <Box>
-              <Heading size="lg" color="text.primary" mb={2}>
-                Monthly Input
-              </Heading>
-              <Text color="text.secondary">
-                Enter asset values, income, and expenses for the selected month
-              </Text>
-            </Box>
-            <MonthSelector year={year} month={month} onChange={handleMonthChange} />
-          </HStack>
-        </Box>
+        <HStack justify="space-between" align="start">
+          <Box>
+            <Heading size="lg" color="text.primary" mb={2}>
+              Monthly Input
+            </Heading>
+            <Text color="text.secondary">
+              Enter asset values, income, and expenses for the selected month
+            </Text>
+          </Box>
+          <MonthSelector year={year} month={month} onChange={handleMonthChange} />
+        </HStack>
 
         {/* Summary Stats */}
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
@@ -132,21 +140,125 @@ export default function InputPage() {
           </Card>
         </SimpleGrid>
 
-        {/* Asset Inputs */}
-        <Card>
-          <CardBody>
-            <AssetInputSection
-              year={year}
-              month={month}
-              assets={assets}
-              onSave={handleSaveAsset}
-            />
-          </CardBody>
-        </Card>
+        {/* Asset Category Forms */}
+        <Box>
+          <Heading size="md" mb={4} color="text.primary">
+            Asset Values
+          </Heading>
+          <VStack spacing={6} align="stretch">
+            <Card>
+              <CardBody>
+                <CategoryAssetForm
+                  categoryCode="SINGLE_STOCKS"
+                  categoryName="Single Stocks"
+                  assets={assetsByCategory.SINGLE_STOCKS}
+                  onSave={handleSaveAsset}
+                  onAdd={handleAddAsset}
+                  onDelete={handleDeleteAsset}
+                  requiresTicker
+                />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <CategoryAssetForm
+                  categoryCode="ETF_STOCKS"
+                  categoryName="ETF Stocks"
+                  assets={assetsByCategory.ETF_STOCKS}
+                  onSave={handleSaveAsset}
+                  onAdd={handleAddAsset}
+                  onDelete={handleDeleteAsset}
+                  requiresTicker
+                />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <CategoryAssetForm
+                  categoryCode="ETF_BONDS"
+                  categoryName="ETF Bonds"
+                  assets={assetsByCategory.ETF_BONDS}
+                  onSave={handleSaveAsset}
+                  onAdd={handleAddAsset}
+                  onDelete={handleDeleteAsset}
+                  requiresTicker
+                />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <CategoryAssetForm
+                  categoryCode="CRYPTO"
+                  categoryName="Crypto"
+                  assets={assetsByCategory.CRYPTO}
+                  onSave={handleSaveAsset}
+                  onAdd={handleAddAsset}
+                  onDelete={handleDeleteAsset}
+                  requiresTicker
+                />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <CategoryAssetForm
+                  categoryCode="PRIVATE_EQUITY"
+                  categoryName="Private Equity"
+                  assets={assetsByCategory.PRIVATE_EQUITY}
+                  onSave={handleSaveAsset}
+                  onAdd={handleAddAsset}
+                  onDelete={handleDeleteAsset}
+                />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <CategoryAssetForm
+                  categoryCode="BUSINESS_PROFITS"
+                  categoryName="Business Profits"
+                  assets={assetsByCategory.BUSINESS_PROFITS}
+                  onSave={handleSaveAsset}
+                  onAdd={handleAddAsset}
+                  onDelete={handleDeleteAsset}
+                />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <CategoryAssetForm
+                  categoryCode="REAL_ESTATE"
+                  categoryName="Real Estate"
+                  assets={assetsByCategory.REAL_ESTATE}
+                  onSave={handleSaveAsset}
+                  onAdd={handleAddAsset}
+                  onDelete={handleDeleteAsset}
+                />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <CategoryAssetForm
+                  categoryCode="CASH"
+                  categoryName="Cash Liquidity"
+                  assets={assetsByCategory.CASH}
+                  onSave={handleSaveAsset}
+                  onAdd={handleAddAsset}
+                  onDelete={handleDeleteAsset}
+                />
+              </CardBody>
+            </Card>
+          </VStack>
+        </Box>
 
         <Divider />
 
-        {/* Cash Flow Inputs */}
+        {/* Cash Flow */}
         <Card>
           <CardBody>
             <CashFlowInputSection

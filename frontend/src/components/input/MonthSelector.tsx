@@ -1,6 +1,6 @@
 'use client';
 
-import { HStack, Select, Text, IconButton } from '@chakra-ui/react';
+import { HStack, Select, IconButton, Text, Box } from '@chakra-ui/react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 interface MonthSelectorProps {
@@ -39,27 +39,42 @@ export default function MonthSelector({ year, month, onChange }: MonthSelectorPr
     onChange(year, parseInt(e.target.value));
   };
 
-  // Generate year options (current year ± 5 years)
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 
   return (
-    <HStack spacing={4}>
+    <HStack spacing={3} bg="background.secondary" px={4} py={2} borderRadius="lg">
       <IconButton
         aria-label="Previous month"
         icon={<FiChevronLeft />}
         onClick={handlePrevious}
         variant="ghost"
         size="sm"
+        color="text.primary"
+        _hover={{ bg: 'background.tertiary' }}
       />
       
       <HStack spacing={2}>
         <Select
           value={month}
           onChange={handleMonthChange}
-          size="sm"
+          size="md"
           w="140px"
+          variant="filled"
           bg="background.tertiary"
+          border="none"
+          color="text.primary"
+          _hover={{ bg: 'background.tertiary' }}
+          _focus={{ bg: 'background.tertiary', borderColor: 'brand.500' }}
+          sx={{
+            option: {
+              bg: 'background.secondary',
+              color: 'text.primary',
+              _hover: {
+                bg: 'background.tertiary',
+              }
+            }
+          }}
         >
           {MONTHS.map((monthName, index) => (
             <option key={index + 1} value={index + 1}>
@@ -71,9 +86,23 @@ export default function MonthSelector({ year, month, onChange }: MonthSelectorPr
         <Select
           value={year}
           onChange={handleYearChange}
-          size="sm"
+          size="md"
           w="100px"
+          variant="filled"
           bg="background.tertiary"
+          border="none"
+          color="text.primary"
+          _hover={{ bg: 'background.tertiary' }}
+          _focus={{ bg: 'background.tertiary', borderColor: 'brand.500' }}
+          sx={{
+            option: {
+              bg: 'background.secondary',
+              color: 'text.primary',
+              _hover: {
+                bg: 'background.tertiary',
+              }
+            }
+          }}
         >
           {years.map((y) => (
             <option key={y} value={y}>
@@ -89,6 +118,8 @@ export default function MonthSelector({ year, month, onChange }: MonthSelectorPr
         onClick={handleNext}
         variant="ghost"
         size="sm"
+        color="text.primary"
+        _hover={{ bg: 'background.tertiary' }}
       />
     </HStack>
   );

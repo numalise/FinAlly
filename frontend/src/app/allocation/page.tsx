@@ -15,6 +15,7 @@ import {
   StatHelpText,
   StatArrow,
   useDisclosure,
+  Divider,
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -45,12 +46,16 @@ export default function AllocationPage() {
 
   const isPositiveChange = parseFloat(totalChangePercent) >= 0;
 
+  // Separate Cash from other categories
+  const cashCategory = categories.find(c => c.category === 'CASH');
+  const otherCategories = categories.filter(c => c.category !== 'CASH');
+
   // Map categories to chart data keys
   const categoryChartData = categories.map((cat) => ({
     category: cat.category,
     categoryName: cat.categoryName,
     color: cat.color,
-    dataKey: cat.category.toLowerCase().replace(/_/g, '_'), // Match history keys
+    dataKey: cat.category.toLowerCase().replace(/_/g, '_'),
   }));
 
   return (
@@ -111,13 +116,28 @@ export default function AllocationPage() {
           </Card>
         </SimpleGrid>
 
-        {/* Category Cards */}
+        {/* Cash Liquidity - Separate Section */}
+        {cashCategory && (
+          <Box>
+            <Heading size="md" mb={4} color="text.primary">
+              Cash Liquidity
+            </Heading>
+            <CategoryCard
+              category={cashCategory}
+              onSelect={() => handleCategoryClick(cashCategory)}
+            />
+          </Box>
+        )}
+
+        <Divider />
+
+        {/* Investment Categories */}
         <Box>
           <Heading size="md" mb={4} color="text.primary">
-            Categories
+            Investment Categories
           </Heading>
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-            {categories.map((category) => (
+            {otherCategories.map((category) => (
               <CategoryCard
                 key={category.category}
                 category={category}

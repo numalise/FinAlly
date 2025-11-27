@@ -9,7 +9,6 @@ import {
   Tr,
   Th,
   Td,
-  Input,
   IconButton,
   HStack,
   Text,
@@ -30,8 +29,9 @@ import {
   TabPanels,
   Tab,
   TabPanel,
+  Input,
 } from '@chakra-ui/react';
-import { FiPlus, FiEdit2, FiTrash2, FiSave } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiSave } from 'react-icons/fi';
 import { useState } from 'react';
 import { formatCurrency } from '@/utils/formatters';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '@/types/input';
@@ -128,7 +128,7 @@ export default function CashFlowInputSection({
         </HStack>
       </HStack>
 
-      <Tabs colorScheme="blue">
+      <Tabs colorScheme="blue" index={activeTab} onChange={setActiveTab}>
         <TabList>
           <Tab>Income ({incomeItems.length})</Tab>
           <Tab>Expenses ({expenseItems.length})</Tab>
@@ -136,7 +136,7 @@ export default function CashFlowInputSection({
 
         <TabPanels>
           {/* Income Tab */}
-          <TabPanel>
+          <TabPanel px={0}>
             <VStack spacing={4} align="stretch">
               <HStack justify="space-between">
                 <Text fontSize="sm" color="text.secondary">
@@ -205,7 +205,7 @@ export default function CashFlowInputSection({
           </TabPanel>
 
           {/* Expenses Tab */}
-          <TabPanel>
+          <TabPanel px={0}>
             <VStack spacing={4} align="stretch">
               <HStack justify="space-between">
                 <Text fontSize="sm" color="text.secondary">
@@ -291,6 +291,16 @@ export default function CashFlowInputSection({
                   value={editCategoryId}
                   onChange={(e) => setEditCategoryId(e.target.value)}
                   bg="background.tertiary"
+                  color="text.primary"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ borderColor: 'whiteAlpha.300' }}
+                  _focus={{ borderColor: 'brand.500' }}
+                  sx={{
+                    option: {
+                      bg: 'background.secondary',
+                      color: 'text.primary',
+                    }
+                  }}
                 >
                   {(activeTab === 0 ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map((cat) => (
                     <option key={cat.code} value={cat.code}>
@@ -309,6 +319,10 @@ export default function CashFlowInputSection({
                   placeholder="Enter amount"
                   step="0.01"
                   bg="background.tertiary"
+                  color="text.primary"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ borderColor: 'whiteAlpha.300' }}
+                  _focus={{ borderColor: 'brand.500' }}
                 />
               </FormControl>
 
@@ -319,6 +333,10 @@ export default function CashFlowInputSection({
                   onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="Add description"
                   bg="background.tertiary"
+                  color="text.primary"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ borderColor: 'whiteAlpha.300' }}
+                  _focus={{ borderColor: 'brand.500' }}
                 />
               </FormControl>
 

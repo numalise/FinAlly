@@ -85,20 +85,21 @@ export function useDashboardData() {
   const monthlyChange = currentNetWorth - previousNetWorth;
   const monthlyChangePercent = ((monthlyChange / previousNetWorth) * 100).toFixed(1);
 
-  const savingsRate = 32;
-  const targetSavingsRate = 30;
+  // Current month income and expenses
+  const totalIncome = 3650; // Salary + dividends
+  const totalExpenses = 2070; // Rent + food + transport + utilities + insurance
 
   return {
     currentNetWorth,
     monthlyChange,
     monthlyChangePercent,
-    savingsRate,
-    targetSavingsRate,
+    totalIncome,
+    totalExpenses,
     netWorthHistory: mockNetWorthData,
     projections: mockProjectionData,
     assetAllocation: mockAssetAllocation,
-    totalAssets: 16, // Updated count
-    totalCategories: 8, // Updated to 8
+    totalAssets: 16,
+    totalCategories: 8,
   };
 }
 

@@ -11,6 +11,8 @@ import {
   StatNumber,
   StatHelpText,
   StatArrow,
+  Grid,
+  GridItem,
   VStack,
 } from '@chakra-ui/react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -24,8 +26,8 @@ export default function DashboardPage() {
     currentNetWorth,
     monthlyChange,
     monthlyChangePercent,
-    savingsRate,
-    targetSavingsRate,
+    totalIncome,
+    totalExpenses,
     netWorthHistory,
     projections,
     assetAllocation,
@@ -76,12 +78,12 @@ export default function DashboardPage() {
           <Card>
             <CardBody>
               <Stat>
-                <StatLabel color="text.secondary">Savings Rate</StatLabel>
-                <StatNumber color="text.primary" fontSize="2xl">
-                  {savingsRate}%
+                <StatLabel color="text.secondary">Total Income</StatLabel>
+                <StatNumber color="success.500" fontSize="2xl">
+                  {formatCurrency(totalIncome)}
                 </StatNumber>
                 <StatHelpText color="text.secondary">
-                  Target: {targetSavingsRate}%
+                  This month
                 </StatHelpText>
               </Stat>
             </CardBody>
@@ -90,12 +92,12 @@ export default function DashboardPage() {
           <Card>
             <CardBody>
               <Stat>
-                <StatLabel color="text.secondary">Assets</StatLabel>
-                <StatNumber color="text.primary" fontSize="2xl">
-                  {totalAssets}
+                <StatLabel color="text.secondary">Total Expenses</StatLabel>
+                <StatNumber color="error.500" fontSize="2xl">
+                  {formatCurrency(totalExpenses)}
                 </StatNumber>
                 <StatHelpText color="text.secondary">
-                  Across {totalCategories} categories
+                  This month
                 </StatHelpText>
               </Stat>
             </CardBody>
