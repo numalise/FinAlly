@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -88,7 +89,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
   const isOverAllocated = category.delta > 0;
   const isUnderAllocated = category.delta < 0;
   const deltaColor = isOverAllocated ? 'orange.500' : isUnderAllocated ? 'blue.500' : 'text.secondary';
-  const deltaIcon = isOverAllocated ? FiMinus : FiPlus;
+  const DeltaIcon = isOverAllocated ? FiMinus : FiPlus;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="4xl">
@@ -139,7 +140,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
                   Delta vs Target
                 </Text>
                 <HStack spacing={1} color={deltaColor}>
-                  {React.createElement(deltaIcon)}
+                  <DeltaIcon />
                   <VStack align="start" spacing={0}>
                     <Text fontSize="xl" fontWeight="bold">
                       {formatCurrency(Math.abs(category.delta))}
