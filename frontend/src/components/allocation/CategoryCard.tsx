@@ -52,12 +52,22 @@ export default function CategoryCard({ category, onSelect }: CategoryCardProps) 
                 </Text>
               </VStack>
             </HStack>
-            <Badge
-              colorScheme={isOnTarget ? 'green' : targetDelta > 0 ? 'blue' : 'orange'}
-              variant="subtle"
-            >
-              {isOnTarget ? 'On Target' : targetDelta > 0 ? 'Over' : 'Under'}
-            </Badge>
+            <VStack align="end" spacing={0}>
+              <Badge
+                colorScheme={isOnTarget ? 'green' : targetDelta > 0 ? 'blue' : 'orange'}
+                variant="subtle"
+              >
+                {isOnTarget ? 'On Target' : targetDelta > 0 ? 'Over' : 'Under'}
+              </Badge>
+              <Text 
+                fontSize="xs" 
+                color={isOnTarget ? 'text.secondary' : targetDelta > 0 ? 'blue.400' : 'orange.400'}
+                fontWeight="medium"
+                mt={1}
+              >
+                {targetDelta > 0 ? '+' : ''}{targetDelta.toFixed(1)}%
+              </Text>
+            </VStack>
           </HStack>
 
           {/* Value */}

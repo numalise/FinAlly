@@ -165,7 +165,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
               </Box>
             </Box>
 
-            {/* Assets Table */}
+            {/* Assets Table with Percentage Deltas */}
             <Box>
               <Text fontSize="md" fontWeight="bold" color="text.primary" mb={4}>
                 Assets in {category.categoryName}
@@ -185,6 +185,9 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
                   <Tbody>
                     {category.assets.map((asset, index) => {
                       const valueChange = asset.currentValue - asset.previousValue;
+                      const percentChange = asset.previousValue !== 0 
+                        ? ((valueChange / asset.previousValue) * 100).toFixed(1)
+                        : '0.0';
                       const percentOfCategory = (asset.currentValue / totalCategoryValue) * 100;
                       const isPositive = valueChange >= 0;
 
@@ -218,12 +221,17 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
                             </Text>
                           </Td>
                           <Td isNumeric>
-                            <HStack justify="flex-end" spacing={1} color={isPositive ? 'success.500' : 'error.500'}>
-                              {isPositive ? <FiTrendingUp size={12} /> : <FiTrendingDown size={12} />}
-                              <Text fontSize="sm" fontWeight="medium">
-                                {isPositive ? '+' : ''}{formatCurrency(Math.abs(valueChange))}
+                            <VStack spacing={0} align="end">
+                              <HStack spacing={1} color={isPositive ? 'success.500' : 'error.500'}>
+                                {isPositive ? <FiTrendingUp size={12} /> : <FiTrendingDown size={12} />}
+                                <Text fontSize="sm" fontWeight="medium">
+                                  {isPositive ? '+' : ''}{formatCurrency(Math.abs(valueChange))}
+                                </Text>
+                              </HStack>
+                              <Text fontSize="xs" color={isPositive ? 'success.500' : 'error.500'}>
+                                {isPositive ? '+' : ''}{percentChange}%
                               </Text>
-                            </HStack>
+                            </VStack>
                           </Td>
                           <Td isNumeric>
                             <Text color="text.primary" fontSize="sm">
