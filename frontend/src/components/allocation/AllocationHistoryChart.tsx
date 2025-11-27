@@ -15,7 +15,12 @@ import { AllocationHistory } from '@/types/allocation';
 
 interface AllocationHistoryChartProps {
   data: AllocationHistory[];
-  categories: Array<{ category: string; categoryName: string; color: string }>;
+  categories: Array<{ 
+    category: string; 
+    categoryName: string; 
+    color: string;
+    dataKey: string; // Add explicit data key for chart
+  }>;
 }
 
 export default function AllocationHistoryChart({ data, categories }: AllocationHistoryChartProps) {
@@ -51,7 +56,7 @@ export default function AllocationHistoryChart({ data, categories }: AllocationH
             <Area
               key={cat.category}
               type="monotone"
-              dataKey={cat.category}
+              dataKey={cat.dataKey}
               stackId="1"
               stroke={cat.color}
               fill={cat.color}

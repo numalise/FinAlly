@@ -22,7 +22,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { CategoryAllocation } from '@/types/allocation';
 import { formatCurrency } from '@/utils/formatters';
-import { FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
+import { FiTrendingUp, FiTrendingDown, FiPlus, FiMinus } from 'react-icons/fi';
 
 interface CategoryDetailModalProps {
   isOpen: boolean;
@@ -30,7 +30,6 @@ interface CategoryDetailModalProps {
   category: CategoryAllocation | null;
 }
 
-// Generate color shades for assets within a category
 const generateShades = (baseColor: string, count: number): string[] => {
   const shades: string[] = [];
   const baseHex = baseColor.replace('#', '');
@@ -76,17 +75,25 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
 
   const colors = generateShades(category.color, category.assets.length);
   const totalCategoryValue = category.currentValue;
+  const totalMarketCap = category.assets
+    .filter(a => a.marketCap)
+    .reduce((sum, a) => sum + (a.marketCap || 0), 0);
 
-  // Prepare data for pie chart
   const pieData = category.assets.map((asset) => ({
     ...asset,
     totalCategoryValue,
   }));
 
+  // Delta logic: positive = over-allocated (need to remove), negative = under-allocated (need to add)
+  const isOverAllocated = category.delta > 0;
+  const isUnderAllocated = category.delta < 0;
+  const deltaColor = isOverAllocated ? 'orange.500' : isUnderAllocated ? 'blue.500' : 'text.secondary';
+  const deltaIcon = isOverAllocated ? FiMinus : FiPlus;
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="4xl">
       <ModalOverlay bg="blackAlpha.800" />
-      <ModalContent bg="background.secondary" maxW="900px">
+      <ModalContent bg="background.secondary" maxW="1000px">
         <ModalHeader color="text.primary">
           <HStack spacing={3}>
             <Box w="4px" h="30px" bg={category.color} borderRadius="full" />
@@ -100,7 +107,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
             <HStack spacing={6}>
               <Box>
                 <Text fontSize="sm" color="text.secondary" mb={1}>
-                  Total Value
+                  Current Value
                 </Text>
                 <Text fontSize="2xl" fontWeight="bold" color="text.primary">
                   {formatCurrency(category.currentValue)}
@@ -108,29 +115,39 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
               </Box>
               <Box>
                 <Text fontSize="sm" color="text.secondary" mb={1}>
-                  % of Portfolio
+                  Current %
                 </Text>
                 <Text fontSize="2xl" fontWeight="bold" color="text.primary">
-                  {category.currentPercentage}%
+                  {category.currentPercentage.toFixed(1)}%
                 </Text>
               </Box>
               <Box>
                 <Text fontSize="sm" color="text.secondary" mb={1}>
                   Target
                 </Text>
-                <Text fontSize="2xl" fontWeight="bold" color="text.secondary">
-                  {category.targetPercentage}%
-                </Text>
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="2xl" fontWeight="bold" color="text.secondary">
+                    {category.targetPercentage.toFixed(1)}%
+                  </Text>
+                  <Text fontSize="sm" color="text.secondary">
+                    {formatCurrency(category.targetValue)}
+                  </Text>
+                </VStack>
               </Box>
               <Box>
                 <Text fontSize="sm" color="text.secondary" mb={1}>
-                  Monthly Change
+                  Delta vs Target
                 </Text>
-                <HStack spacing={1} color={category.currentValue >= category.previousValue ? 'success.500' : 'error.500'}>
-                  {category.currentValue >= category.previousValue ? <FiTrendingUp /> : <FiTrendingDown />}
-                  <Text fontSize="xl" fontWeight="bold">
-                    {formatCurrency(Math.abs(category.currentValue - category.previousValue))}
-                  </Text>
+                <HStack spacing={1} color={deltaColor}>
+                  {React.createElement(deltaIcon)}
+                  <VStack align="start" spacing={0}>
+                    <Text fontSize="xl" fontWeight="bold">
+                      {formatCurrency(Math.abs(category.delta))}
+                    </Text>
+                    <Text fontSize="xs">
+                      {isOverAllocated ? 'Remove' : isUnderAllocated ? 'Add' : 'On Target'}
+                    </Text>
+                  </VStack>
                 </HStack>
               </Box>
             </HStack>
@@ -165,7 +182,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
               </Box>
             </Box>
 
-            {/* Assets Table with Percentage Deltas */}
+            {/* Assets Table */}
             <Box>
               <Text fontSize="md" fontWeight="bold" color="text.primary" mb={4}>
                 Assets in {category.categoryName}
@@ -176,20 +193,31 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
                     <Tr>
                       <Th>Asset Name</Th>
                       <Th>Ticker</Th>
-                      <Th isNumeric>Quantity</Th>
+                      {category.hasMarketCapTargets && <Th isNumeric>Market Cap</Th>}
                       <Th isNumeric>Current Value</Th>
-                      <Th isNumeric>Monthly Δ</Th>
                       <Th isNumeric>% of Category</Th>
+                      {category.hasMarketCapTargets && <Th isNumeric>Target %</Th>}
+                      {category.hasMarketCapTargets && <Th isNumeric>Target Value</Th>}
+                      {category.hasMarketCapTargets && <Th isNumeric>Delta</Th>}
                     </Tr>
                   </Thead>
                   <Tbody>
                     {category.assets.map((asset, index) => {
-                      const valueChange = asset.currentValue - asset.previousValue;
-                      const percentChange = asset.previousValue !== 0 
-                        ? ((valueChange / asset.previousValue) * 100).toFixed(1)
-                        : '0.0';
                       const percentOfCategory = (asset.currentValue / totalCategoryValue) * 100;
-                      const isPositive = valueChange >= 0;
+                      
+                      let targetPct = 0;
+                      let targetValue = 0;
+                      let delta = 0;
+                      
+                      if (category.hasMarketCapTargets && asset.marketCap && totalMarketCap > 0) {
+                        targetPct = (asset.marketCap / totalMarketCap) * 100;
+                        targetValue = (targetPct / 100) * totalCategoryValue;
+                        delta = asset.currentValue - targetValue;
+                      }
+
+                      const assetIsOver = delta > 0;
+                      const assetIsUnder = delta < 0;
+                      const assetDeltaColor = assetIsOver ? 'orange.500' : assetIsUnder ? 'blue.500' : 'text.secondary';
 
                       return (
                         <Tr key={asset.id}>
@@ -210,34 +238,54 @@ export default function CategoryDetailModal({ isOpen, onClose, category }: Categ
                               <Text color="text.secondary" fontSize="xs">-</Text>
                             )}
                           </Td>
-                          <Td isNumeric>
-                            <Text color="text.secondary" fontSize="sm">
-                              {asset.quantity ? asset.quantity.toLocaleString() : '-'}
-                            </Text>
-                          </Td>
+                          {category.hasMarketCapTargets && (
+                            <Td isNumeric>
+                              <Text color="text.secondary" fontSize="xs">
+                                {asset.marketCap ? `$${(asset.marketCap / 1000000000).toFixed(1)}B` : '-'}
+                              </Text>
+                            </Td>
+                          )}
                           <Td isNumeric>
                             <Text color="text.primary" fontWeight="medium">
                               {formatCurrency(asset.currentValue)}
                             </Text>
                           </Td>
                           <Td isNumeric>
-                            <VStack spacing={0} align="end">
-                              <HStack spacing={1} color={isPositive ? 'success.500' : 'error.500'}>
-                                {isPositive ? <FiTrendingUp size={12} /> : <FiTrendingDown size={12} />}
-                                <Text fontSize="sm" fontWeight="medium">
-                                  {isPositive ? '+' : ''}{formatCurrency(Math.abs(valueChange))}
-                                </Text>
-                              </HStack>
-                              <Text fontSize="xs" color={isPositive ? 'success.500' : 'error.500'}>
-                                {isPositive ? '+' : ''}{percentChange}%
-                              </Text>
-                            </VStack>
-                          </Td>
-                          <Td isNumeric>
                             <Text color="text.primary" fontSize="sm">
                               {percentOfCategory.toFixed(1)}%
                             </Text>
                           </Td>
+                          {category.hasMarketCapTargets && (
+                            <>
+                              <Td isNumeric>
+                                <Text color="text.secondary" fontSize="sm">
+                                  {targetPct > 0 ? `${targetPct.toFixed(1)}%` : '-'}
+                                </Text>
+                              </Td>
+                              <Td isNumeric>
+                                <Text color="text.secondary" fontSize="sm">
+                                  {targetValue > 0 ? formatCurrency(targetValue) : '-'}
+                                </Text>
+                              </Td>
+                              <Td isNumeric>
+                                {targetValue > 0 ? (
+                                  <VStack spacing={0} align="end">
+                                    <HStack spacing={1} color={assetDeltaColor}>
+                                      {assetIsOver ? <FiMinus size={10} /> : assetIsUnder ? <FiPlus size={10} /> : null}
+                                      <Text fontSize="sm" fontWeight="medium">
+                                        {formatCurrency(Math.abs(delta))}
+                                      </Text>
+                                    </HStack>
+                                    <Text fontSize="xs" color="text.tertiary">
+                                      {assetIsOver ? 'Remove' : assetIsUnder ? 'Add' : 'OK'}
+                                    </Text>
+                                  </VStack>
+                                ) : (
+                                  <Text color="text.secondary" fontSize="xs">-</Text>
+                                )}
+                              </Td>
+                            </>
+                          )}
                         </Tr>
                       );
                     })}

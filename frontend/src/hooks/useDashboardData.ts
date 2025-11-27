@@ -1,7 +1,67 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
-// Mock data with targets
+// Use same categories as allocation page (8 categories from DB)
+const mockAssetAllocation = [
+  { 
+    category: 'Single Stocks', 
+    value: 25000, 
+    percentage: 19.9,
+    target: 25086,
+    targetPercentage: 20.0
+  },
+  { 
+    category: 'ETF Stocks', 
+    value: 35000, 
+    percentage: 27.9,
+    target: 31357.5,
+    targetPercentage: 25.0
+  },
+  { 
+    category: 'ETF Bonds', 
+    value: 10000, 
+    percentage: 8.0,
+    target: 12543,
+    targetPercentage: 10.0
+  },
+  { 
+    category: 'Crypto', 
+    value: 15000, 
+    percentage: 12.0,
+    target: 12543,
+    targetPercentage: 10.0
+  },
+  { 
+    category: 'Private Equity', 
+    value: 8000, 
+    percentage: 6.4,
+    target: 6271.5,
+    targetPercentage: 5.0
+  },
+  { 
+    category: 'Business Profits', 
+    value: 5000, 
+    percentage: 4.0,
+    target: 6271.5,
+    targetPercentage: 5.0
+  },
+  { 
+    category: 'Real Estate', 
+    value: 20000, 
+    percentage: 15.9,
+    target: 25086,
+    targetPercentage: 20.0
+  },
+  { 
+    category: 'Cash Liquidity', 
+    value: 7430, 
+    percentage: 5.9,
+    target: 6271.5,
+    targetPercentage: 5.0
+  },
+];
+
+// Mock net worth data
 const mockNetWorthData = [
   { month: 'Jul', value: 115000 },
   { month: 'Aug', value: 118000 },
@@ -17,44 +77,6 @@ const mockProjectionData = [
   { month: 'Feb', projected: 134000 },
   { month: 'Mar', projected: 137000 },
   { month: 'Apr', projected: 140000 },
-];
-
-const mockAssetAllocation = [
-  { 
-    category: 'Stocks', 
-    value: 65000, 
-    percentage: 51.8,
-    target: 62500,
-    targetPercentage: 50.0
-  },
-  { 
-    category: 'Real Estate', 
-    value: 35000, 
-    percentage: 27.9,
-    target: 37500,
-    targetPercentage: 30.0
-  },
-  { 
-    category: 'Crypto', 
-    value: 15000, 
-    percentage: 12.0,
-    target: 12500,
-    targetPercentage: 10.0
-  },
-  { 
-    category: 'Cash', 
-    value: 8430, 
-    percentage: 6.7,
-    target: 7500,
-    targetPercentage: 6.0
-  },
-  { 
-    category: 'Bonds', 
-    value: 2000, 
-    percentage: 1.6,
-    target: 5000,
-    targetPercentage: 4.0
-  },
 ];
 
 export function useDashboardData() {
@@ -75,8 +97,8 @@ export function useDashboardData() {
     netWorthHistory: mockNetWorthData,
     projections: mockProjectionData,
     assetAllocation: mockAssetAllocation,
-    totalAssets: 12,
-    totalCategories: 5,
+    totalAssets: 16, // Updated count
+    totalCategories: 8, // Updated to 8
   };
 }
 

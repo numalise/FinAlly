@@ -45,11 +45,12 @@ export default function AllocationPage() {
 
   const isPositiveChange = parseFloat(totalChangePercent) >= 0;
 
-  // Prepare category data for historical chart
+  // Map categories to chart data keys
   const categoryChartData = categories.map((cat) => ({
     category: cat.category,
     categoryName: cat.categoryName,
     color: cat.color,
+    dataKey: cat.category.toLowerCase().replace(/_/g, '_'), // Match history keys
   }));
 
   return (
@@ -60,7 +61,7 @@ export default function AllocationPage() {
             Asset Allocation
           </Heading>
           <Text color="text.secondary">
-            Manage and monitor your portfolio allocation across different asset categories
+            Manage and monitor your portfolio allocation across 8 asset categories
           </Text>
         </Box>
 
