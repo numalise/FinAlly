@@ -1,76 +1,162 @@
 'use client';
 
-import { Box, Heading, VStack, HStack, Text } from '@chakra-ui/react';
+import { Box, Heading, VStack, HStack, Text, Table, Thead, Tbody, Tr, Th, Td } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatCurrency } from '@/utils/formatters';
 
-interface AssetAllocationProps {
-  data: Array<{ category: string; value: number; percentage: number }>;
+interface AssetData {
+  category: string;
+  value: number;
+  percentage: number;
+  target: number;
+  targetPercentage: number;
 }
 
-// Blue gradient palette - professional single-color scheme
+interface AssetAllocationProps {
+  data: AssetData[];
+}
+
+// Blue gradient palette
 const BLUE_PALETTE = [
-  '#2196f3', // Bright blue
-  '#1e88e5', // Medium blue
-  '#1976d2', // Deep blue
-  '#1565c0', // Darker blue
-  '#0d47a1', // Darkest blue
+  '#2196f3',
+  '#1e88e5',
+  '#1976d2',
+  '#1565c0',
+  '#0d47a1',
 ];
 
+// Custom tooltip component
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <Box
+        bg="#1a1f2e"
+        border="1px solid #252d3d"
+        borderRadius="md"
+        p={3}
+        color="white"
+      >
+        <Text fontWeight="bold" fontSize="md">
+          {data.category}: {formatCurrency(data.value)}
+        </Text>
+      </Box>
+    );
+  }
+  return null;
+};
+
 export default function AssetAllocationChart({ data }: AssetAllocationProps) {
+  const totalValue = data.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <Box>
-      <Heading size="md" mb={4} color="text.primary">
+      <Heading size="md" mb={6} color="text.primary">
         Asset Allocation
       </Heading>
       
-      <ResponsiveContainer width="100%" height={250}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-            label={({ percentage }) => `${percentage}%`}
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={BLUE_PALETTE[index % BLUE_PALETTE.length]} />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#1a1f2e',
-              border: '1px solid #252d3d',
-              borderRadius: '8px',
-              color: '#e8eaed',
-            }}
-            formatter={(value: number) => formatCurrency(value)}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+      <VStack spacing={8}>
+        {/* Centered Pie Chart */}
+        <Box w="full" display="flex" justifyContent="center">
+          <Box w={{ base: '100%', md: '500px' }} h="400px">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={140}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ percentage }) => `${percentage}%`}
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={BLUE_PALETTE[index % BLUE_PALETTE.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </Box>
+        </Box>
 
-      <VStack align="stretch" spacing={2} mt={4}>
-        {data.map((item, index) => (
-          <HStack key={item.category} justify="space-between">
-            <HStack spacing={2}>
-              <Box w="12px" h="12px" borderRadius="sm" bg={BLUE_PALETTE[index]} />
-              <Text fontSize="sm" color="text.secondary">
-                {item.category}
-              </Text>
-            </HStack>
-            <HStack spacing={4}>
-              <Text fontSize="sm" color="text.primary" fontWeight="medium">
-                {formatCurrency(item.value)}
-              </Text>
-              <Text fontSize="sm" color="text.secondary">
-                {item.percentage}%
-              </Text>
-            </HStack>
-          </HStack>
-        ))}
+        {/* Detailed Table */}
+        <Box w="full" overflowX="auto">
+          <Table variant="simple" size="sm">
+            <Thead>
+              <Tr>
+                <Th>Category</Th>
+                <Th isNumeric>Current Value</Th>
+                <Th isNumeric>Current %</Th>
+                <Th isNumeric>Target %</Th>
+                <Th isNumeric>Delta</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {data.map((item, index) => {
+                const delta = item.percentage - item.targetPercentage;
+                const deltaColor = Math.abs(delta) < 1 
+                  ? 'text.secondary' 
+                  : delta > 0 
+                    ? 'success.500' 
+                    : 'warning.500';
+
+                return (
+                  <Tr key={item.category}>
+                    <Td>
+                      <HStack spacing={2}>
+                        <Box w="12px" h="12px" borderRadius="sm" bg={BLUE_PALETTE[index]} />
+                        <Text color="text.primary" fontWeight="medium">
+                          {item.category}
+                        </Text>
+                      </HStack>
+                    </Td>
+                    <Td isNumeric>
+                      <Text color="text.primary" fontWeight="medium">
+                        {formatCurrency(item.value)}
+                      </Text>
+                    </Td>
+                    <Td isNumeric>
+                      <Text color="text.primary">
+                        {item.percentage}%
+                      </Text>
+                    </Td>
+                    <Td isNumeric>
+                      <Text color="text.secondary">
+                        {item.targetPercentage}%
+                      </Text>
+                    </Td>
+                    <Td isNumeric>
+                      <Text color={deltaColor} fontWeight="medium">
+                        {delta > 0 ? '+' : ''}{delta.toFixed(1)}%
+                      </Text>
+                    </Td>
+                  </Tr>
+                );
+              })}
+              <Tr fontWeight="bold" borderTop="2px solid" borderColor="whiteAlpha.200">
+                <Td>
+                  <Text color="text.primary">Total</Text>
+                </Td>
+                <Td isNumeric>
+                  <Text color="text.primary">
+                    {formatCurrency(totalValue)}
+                  </Text>
+                </Td>
+                <Td isNumeric>
+                  <Text color="text.primary">100%</Text>
+                </Td>
+                <Td isNumeric>
+                  <Text color="text.secondary">100%</Text>
+                </Td>
+                <Td isNumeric>
+                  <Text color="text.secondary">-</Text>
+                </Td>
+              </Tr>
+            </Tbody>
+          </Table>
+        </Box>
       </VStack>
     </Box>
   );

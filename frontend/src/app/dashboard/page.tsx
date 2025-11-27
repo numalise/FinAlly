@@ -11,15 +11,13 @@ import {
   StatNumber,
   StatHelpText,
   StatArrow,
-  Grid,
-  GridItem,
+  VStack,
 } from '@chakra-ui/react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useDashboardData } from '@/hooks/useDashboardData';
-import NetWorthChart from '@/components/dashboard/NetWorthChart';
-import ProjectionChart from '@/components/dashboard/ProjectionChart';
+import CombinedNetWorthChart from '@/components/dashboard/CombinedNetWorthChart';
 import AssetAllocationChart from '@/components/dashboard/AssetAllocationChart';
-import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
 
 export default function DashboardPage() {
   const {
@@ -39,13 +37,13 @@ export default function DashboardPage() {
 
   return (
     <MainLayout>
-      <Box>
-        <Heading size="lg" mb={6} color="text.primary">
+      <VStack spacing={8} align="stretch">
+        <Heading size="lg" color="text.primary">
           Dashboard
         </Heading>
 
         {/* Top Stats */}
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
           <Card>
             <CardBody>
               <Stat>
@@ -104,24 +102,15 @@ export default function DashboardPage() {
           </Card>
         </SimpleGrid>
 
-        {/* Charts Grid */}
-        <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6} mb={8}>
-          <GridItem>
-            <Card>
-              <CardBody>
-                <NetWorthChart data={netWorthHistory} />
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          <GridItem>
-            <Card>
-              <CardBody>
-                <ProjectionChart data={projections} />
-              </CardBody>
-            </Card>
-          </GridItem>
-        </Grid>
+        {/* Combined Net Worth Chart */}
+        <Card>
+          <CardBody>
+            <CombinedNetWorthChart 
+              historicalData={netWorthHistory}
+              projectionData={projections}
+            />
+          </CardBody>
+        </Card>
 
         {/* Asset Allocation */}
         <Card>
@@ -129,7 +118,7 @@ export default function DashboardPage() {
             <AssetAllocationChart data={assetAllocation} />
           </CardBody>
         </Card>
-      </Box>
+      </VStack>
     </MainLayout>
   );
 }

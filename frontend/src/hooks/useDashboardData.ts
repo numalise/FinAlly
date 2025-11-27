@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
-// Mock data for now (until we implement the API endpoints)
+// Mock data with targets
 const mockNetWorthData = [
   { month: 'Jul', value: 115000 },
   { month: 'Aug', value: 118000 },
@@ -20,21 +20,49 @@ const mockProjectionData = [
 ];
 
 const mockAssetAllocation = [
-  { category: 'Stocks', value: 65000, percentage: 51.8 },
-  { category: 'Real Estate', value: 35000, percentage: 27.9 },
-  { category: 'Crypto', value: 15000, percentage: 12.0 },
-  { category: 'Cash', value: 8430, percentage: 6.7 },
-  { category: 'Bonds', value: 2000, percentage: 1.6 },
+  { 
+    category: 'Stocks', 
+    value: 65000, 
+    percentage: 51.8,
+    target: 62500,
+    targetPercentage: 50.0
+  },
+  { 
+    category: 'Real Estate', 
+    value: 35000, 
+    percentage: 27.9,
+    target: 37500,
+    targetPercentage: 30.0
+  },
+  { 
+    category: 'Crypto', 
+    value: 15000, 
+    percentage: 12.0,
+    target: 12500,
+    targetPercentage: 10.0
+  },
+  { 
+    category: 'Cash', 
+    value: 8430, 
+    percentage: 6.7,
+    target: 7500,
+    targetPercentage: 6.0
+  },
+  { 
+    category: 'Bonds', 
+    value: 2000, 
+    percentage: 1.6,
+    target: 5000,
+    targetPercentage: 4.0
+  },
 ];
 
 export function useDashboardData() {
-  // Current net worth
   const currentNetWorth = 125430;
   const previousNetWorth = 120200;
   const monthlyChange = currentNetWorth - previousNetWorth;
   const monthlyChangePercent = ((monthlyChange / previousNetWorth) * 100).toFixed(1);
 
-  // Savings rate
   const savingsRate = 32;
   const targetSavingsRate = 30;
 
