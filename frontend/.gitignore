@@ -43,3 +43,4 @@ next-env.d.ts
 # Preserve .config directory but ignore sensitive files if any
 .config/local.json
 .config/*.local.json
+.env*.local
