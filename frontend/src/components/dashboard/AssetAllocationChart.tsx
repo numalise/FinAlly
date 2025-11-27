@@ -3,6 +3,7 @@
 import { Box, Heading, VStack, HStack, Text, Table, Thead, Tbody, Tr, Th, Td } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatCurrency } from '@/utils/formatters';
+import { FiPlus, FiMinus } from 'react-icons/fi';
 
 interface AssetData {
   category: string;
@@ -22,6 +23,9 @@ const BLUE_PALETTE = [
   '#1976d2',
   '#1565c0',
   '#0d47a1',
+  '#64b5f6',
+  '#42a5f5',
+  '#90caf9',
 ];
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -79,7 +83,7 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
           </Box>
         </Box>
 
-        {/* Detailed Table with Value Deltas */}
+        {/* Detailed Table with Correct Delta Logic */}
         <Box w="full" overflowX="auto">
           <Table variant="simple" size="sm">
             <Thead>
@@ -94,13 +98,14 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
             </Thead>
             <Tbody>
               {data.map((item, index) => {
-                const deltaPercent = item.percentage - item.targetPercentage;
                 const deltaValue = item.value - item.target;
-                const deltaColor = Math.abs(deltaPercent) < 1 
-                  ? 'text.secondary' 
-                  : deltaPercent > 0 
-                    ? 'success.500' 
-                    : 'warning.500';
+                const deltaPercent = item.percentage - item.targetPercentage;
+                
+                // Delta logic: positive = over-allocated (orange/remove), negative = under-allocated (blue/add)
+                const isOver = deltaValue > 0;
+                const isUnder = deltaValue < 0;
+                const isOnTarget = Math.abs(deltaPercent) < 1;
+                const deltaColor = isOnTarget ? 'text.secondary' : isOver ? 'orange.500' : 'blue.500';
 
                 return (
                   <Tr key={item.category}>
@@ -119,7 +124,7 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                     </Td>
                     <Td isNumeric>
                       <Text color="text.primary">
-                        {item.percentage}%
+                        {item.percentage.toFixed(1)}%
                       </Text>
                     </Td>
                     <Td isNumeric>
@@ -129,17 +134,27 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                     </Td>
                     <Td isNumeric>
                       <Text color="text.secondary">
-                        {item.targetPercentage}%
+                        {item.targetPercentage.toFixed(1)}%
                       </Text>
                     </Td>
                     <Td isNumeric>
                       <VStack spacing={0} align="end">
-                        <Text color={deltaColor} fontWeight="medium" fontSize="sm">
-                          {deltaPercent > 0 ? '+' : ''}{deltaPercent.toFixed(1)}%
-                        </Text>
-                        <Text color={deltaColor} fontSize="xs">
-                          {deltaValue > 0 ? '+' : ''}{formatCurrency(Math.abs(deltaValue))}
-                        </Text>
+                        <HStack spacing={1} color={deltaColor}>
+                          {isOver ? <FiMinus size={12} /> : isUnder ? <FiPlus size={12} /> : null}
+                          <Text fontSize="sm" fontWeight="medium">
+                            {deltaPercent > 0 ? '+' : ''}{deltaPercent.toFixed(1)}%
+                          </Text>
+                        </HStack>
+                        <HStack spacing={1}>
+                          <Text fontSize="xs" color={deltaColor}>
+                            {formatCurrency(Math.abs(deltaValue))}
+                          </Text>
+                          {!isOnTarget && (
+                            <Text fontSize="xs" color="text.tertiary">
+                              {isOver ? 'Remove' : 'Add'}
+                            </Text>
+                          )}
+                        </HStack>
                       </VStack>
                     </Td>
                   </Tr>
