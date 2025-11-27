@@ -2,31 +2,30 @@
 
 import {
   Box,
-  Flex,
   HStack,
   IconButton,
   Text,
-  Heading,
-  useDisclosure,
   Drawer,
+  DrawerBody,
+  DrawerHeader,
   DrawerOverlay,
   DrawerContent,
   DrawerCloseButton,
-  DrawerBody,
+  useDisclosure,
   VStack,
   Icon,
+  Button,
 } from '@chakra-ui/react';
-import { MdMenu, MdDashboard, MdPieChart, MdAddCircle, MdSettings } from 'react-icons/md';
-import { FaChartLine } from 'react-icons/fa';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { FiMenu, FiHome, FiPieChart, FiEdit3, FiBarChart2, FiSettings, FiLogOut } from 'react-icons/fi';
 
-const navItems = [
-  { label: 'Dashboard', icon: MdDashboard, href: '/dashboard' },
-  { label: 'Asset Allocation', icon: MdPieChart, href: '/allocation' },
-  { label: 'Monthly Input', icon: MdAddCircle, href: '/input' },
-  { label: 'Analytics', icon: FaChartLine, href: '/analytics' },
-  { label: 'Settings', icon: MdSettings, href: '/settings' },
+const navigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: FiHome },
+  { name: 'Asset Allocation', href: '/allocation', icon: FiPieChart },
+  { name: 'Monthly Input', href: '/input', icon: FiEdit3 },
+  { name: 'Analytics', href: '/analytics', icon: FiBarChart2 },
+  { name: 'Settings', href: '/settings', icon: FiSettings },
 ];
 
 export default function TopBar() {
@@ -34,80 +33,81 @@ export default function TopBar() {
   const pathname = usePathname();
 
   return (
-    <>
-      <Box
-        position="fixed"
-        top={0}
-        left={0}
-        right={0}
-        h="64px"
-        bg="background.secondary"
-        borderBottom="1px"
-        borderColor="whiteAlpha.100"
-        px={4}
-        display={{ base: 'flex', lg: 'none' }}
-        alignItems="center"
-        zIndex={10}
-      >
-        <Flex justify="space-between" align="center" w="full">
-          <HStack spacing={3}>
-            <Box
-              w="32px"
-              h="32px"
-              bg="brand.500"
-              borderRadius="md"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Text fontSize="lg" fontWeight="bold" color="white">
-                F
-              </Text>
-            </Box>
-            <Heading size="sm">FinAlly</Heading>
-          </HStack>
+    <Box
+      position="fixed"
+      top="0"
+      left="0"
+      right="0"
+      h="64px"
+      bg="background.secondary"
+      borderBottom="1px solid"
+      borderColor="whiteAlpha.100"
+      display={{ base: 'block', lg: 'none' }}
+      zIndex="sticky"
+    >
+      <HStack h="full" px={4} justify="space-between">
+        <IconButton
+          aria-label="Open menu"
+          icon={<FiMenu />}
+          variant="ghost"
+          onClick={onOpen}
+        />
+        <Text fontSize="xl" fontWeight="bold" color="text.primary">
+          FinAlly
+        </Text>
+        <Box w="40px" /> {/* Spacer for centering */}
+      </HStack>
 
-          <IconButton
-            aria-label="Open menu"
-            icon={<MdMenu />}
-            onClick={onOpen}
-            variant="ghost"
-          />
-        </Flex>
-      </Box>
-
-      {/* Mobile Drawer */}
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
         <DrawerOverlay />
         <DrawerContent bg="background.secondary">
           <DrawerCloseButton />
-          <DrawerBody pt={8}>
-            <VStack spacing={2} align="stretch">
-              {navItems.map((item) => {
+          <DrawerHeader color="text.primary">Menu</DrawerHeader>
+
+          <DrawerBody>
+            <VStack spacing={1} align="stretch">
+              {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
-                  <Link key={item.href} href={item.href} onClick={onClose}>
+                  <Link key={item.name} href={item.href} onClick={onClose}>
                     <HStack
                       spacing={3}
-                      px={4}
+                      px={3}
                       py={3}
                       borderRadius="md"
                       bg={isActive ? 'brand.500' : 'transparent'}
                       color={isActive ? 'white' : 'text.secondary'}
-                      _hover={{ bg: isActive ? 'brand.600' : 'background.tertiary' }}
+                      _hover={{
+                        bg: isActive ? 'brand.600' : 'background.tertiary',
+                        color: isActive ? 'white' : 'text.primary',
+                      }}
+                      cursor="pointer"
                     >
                       <Icon as={item.icon} boxSize={5} />
-                      <Text fontWeight={isActive ? 'semibold' : 'medium'}>
-                        {item.label}
+                      <Text fontSize="sm" fontWeight="medium">
+                        {item.name}
                       </Text>
                     </HStack>
                   </Link>
                 );
               })}
+
+              <Box pt={6}>
+                <Button
+                  leftIcon={<Icon as={FiLogOut} />}
+                  variant="ghost"
+                  justifyContent="flex-start"
+                  w="full"
+                  color="text.secondary"
+                  _hover={{ bg: 'background.tertiary', color: 'text.primary' }}
+                >
+                  Logout
+                </Button>
+              </Box>
             </VStack>
           </DrawerBody>
         </DrawerContent>
       </Drawer>
-    </>
+    </Box>
   );
 }
