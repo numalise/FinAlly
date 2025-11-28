@@ -118,3 +118,9 @@ lambda/prisma/migrations/
 # Terraform Lambda Package
 # =====================================================================
 terraform/environments/*/function.zip
+
+# Lambda deployment packages
+lambda/*.zip
+lambda/dist/
+lambda/layers/
+*.zip
