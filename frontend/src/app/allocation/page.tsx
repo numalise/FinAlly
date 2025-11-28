@@ -22,6 +22,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { useAllocationData } from '@/hooks/useAllocationData';
 import CategoryCard from '@/components/allocation/CategoryCard';
 import CategoryDetailModal from '@/components/allocation/CategoryDetailModal';
+import CashLiquiditySection from '@/components/allocation/CashLiquiditySection';
 import AllocationHistoryChart from '@/components/allocation/AllocationHistoryChart';
 import { formatCurrency } from '@/utils/formatters';
 import { CategoryAllocation } from '@/types/allocation';
@@ -34,6 +35,7 @@ export default function AllocationPage() {
     previousTotalValue,
     totalChange,
     totalChangePercent,
+    handleUpdateTarget,
   } = useAllocationData();
 
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -69,7 +71,7 @@ export default function AllocationPage() {
         </Box>
 
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Total Portfolio Value</StatLabel>
@@ -84,7 +86,7 @@ export default function AllocationPage() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Monthly Change</StatLabel>
@@ -98,7 +100,7 @@ export default function AllocationPage() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Asset Categories</StatLabel>
@@ -113,20 +115,15 @@ export default function AllocationPage() {
           </Card>
         </SimpleGrid>
 
-        {/* Cash Liquidity - No Card Wrapper */}
         {cashCategory && (
-          <Box>
-            <Heading size="md" mb={4} color="text.primary">
-              Cash Liquidity
-            </Heading>
-            <CategoryCard
-              category={cashCategory}
-              onSelect={() => handleCategoryClick(cashCategory)}
-            />
-          </Box>
+          <Card bg="background.secondary" border="none">
+            <CardBody>
+              <CashLiquiditySection category={cashCategory} />
+            </CardBody>
+          </Card>
         )}
 
-        <Divider />
+        <Divider borderColor="background.tertiary" />
 
         <Box>
           <Heading size="md" mb={4} color="text.primary">
@@ -143,7 +140,7 @@ export default function AllocationPage() {
           </SimpleGrid>
         </Box>
 
-        <Card>
+        <Card bg="background.secondary" border="none">
           <CardBody>
             <AllocationHistoryChart
               data={allocationHistory}
@@ -157,6 +154,7 @@ export default function AllocationPage() {
         isOpen={isOpen}
         onClose={onClose}
         category={selectedCategory}
+        onUpdateTarget={handleUpdateTarget}
       />
     </MainLayout>
   );

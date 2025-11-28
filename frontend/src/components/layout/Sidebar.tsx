@@ -3,12 +3,13 @@
 import { Box, VStack, HStack, Text, Icon, Button } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { FiHome, FiPieChart, FiEdit3, FiBarChart2, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FiHome, FiPieChart, FiTrendingUp, FiDollarSign, FiBarChart2, FiSettings, FiLogOut } from 'react-icons/fi';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: FiHome },
   { name: 'Asset Allocation', href: '/allocation', icon: FiPieChart },
-  { name: 'Monthly Input', href: '/input', icon: FiEdit3 },
+  { name: 'Monthly Investments', href: '/investments', icon: FiTrendingUp },
+  { name: 'Cash Flow', href: '/cashflow', icon: FiDollarSign },
   { name: 'Analytics', href: '/analytics', icon: FiBarChart2 },
   { name: 'Settings', href: '/settings', icon: FiSettings },
 ];
@@ -29,7 +30,6 @@ export default function Sidebar() {
       display={{ base: 'none', lg: 'block' }}
     >
       <VStack h="full" justify="space-between" align="stretch" py={6} px={4}>
-        {/* Logo */}
         <Box>
           <HStack spacing={3} px={3} mb={8}>
             <Box
@@ -50,7 +50,6 @@ export default function Sidebar() {
             </Text>
           </HStack>
 
-          {/* Navigation */}
           <VStack spacing={1} align="stretch">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
@@ -81,7 +80,6 @@ export default function Sidebar() {
           </VStack>
         </Box>
 
-        {/* Logout */}
         <Button
           leftIcon={<Icon as={FiLogOut} />}
           variant="ghost"

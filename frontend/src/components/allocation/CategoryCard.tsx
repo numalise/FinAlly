@@ -10,9 +10,9 @@ import {
   Badge,
   Box,
 } from '@chakra-ui/react';
-import { formatCurrency, formatPercent } from '@/utils/formatters';
+import { formatCurrency } from '@/utils/formatters';
 import { CategoryAllocation } from '@/types/allocation';
-import { FiTrendingUp, FiTrendingDown, FiAlertCircle } from 'react-icons/fi';
+import { FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
 
 interface CategoryCardProps {
   category: CategoryAllocation;
@@ -25,9 +25,6 @@ export default function CategoryCard({ category, onSelect }: CategoryCardProps) 
   const targetDelta = category.deltaPercentage;
   const isOnTarget = Math.abs(targetDelta) < 1;
 
-  // Progress bar logic:
-  // - If current < target: show as incomplete (current/target * 100)
-  // - If current > target: show as over 100% (current/target * 100)
   const progressValue = (category.currentPercentage / category.targetPercentage) * 100;
   const isOver = category.currentPercentage > category.targetPercentage;
   const isUnder = category.currentPercentage < category.targetPercentage;
@@ -42,13 +39,15 @@ export default function CategoryCard({ category, onSelect }: CategoryCardProps) 
         borderColor: category.color,
       }}
       transition="all 0.2s"
+      borderWidth="1px"
+      borderColor="transparent"
     >
       <CardBody>
         <VStack align="stretch" spacing={4}>
-          {/* Header */}
+          {/* Header with colored indicator */}
           <HStack justify="space-between">
-            <HStack spacing={2}>
-              <Box w="4px" h="40px" bg={category.color} borderRadius="full" />
+            <HStack spacing={3}>
+              <Box w="4px" h="50px" bg={category.color} borderRadius="full" />
               <VStack align="start" spacing={0}>
                 <Text fontSize="lg" fontWeight="bold" color="text.primary">
                   {category.categoryName}
@@ -58,35 +57,23 @@ export default function CategoryCard({ category, onSelect }: CategoryCardProps) 
                 </Text>
               </VStack>
             </HStack>
-            <VStack align="end" spacing={0}>
-              <Badge
-                colorScheme={isOnTarget ? 'green' : isOver ? 'orange' : 'blue'}
-                variant="subtle"
-              >
-                {isOnTarget ? 'On Target' : isOver ? 'Over' : 'Under'}
-              </Badge>
-              <Text 
-                fontSize="xs" 
-                color={isOnTarget ? 'text.secondary' : isOver ? 'orange.400' : 'blue.400'}
-                fontWeight="medium"
-                mt={1}
-              >
-                {targetDelta > 0 ? '+' : ''}{targetDelta.toFixed(1)}%
-              </Text>
-              <Text fontSize="xs" color={isOnTarget ? 'text.tertiary' : isOver ? 'orange.400' : 'blue.400'}>
-                {category.delta >= 0 ? '+' : ''}{formatCurrency(Math.abs(category.delta))}
-              </Text>
-            </VStack>
+            <Badge
+              colorScheme={isOnTarget ? 'green' : isOver ? 'orange' : 'blue'}
+              variant="subtle"
+              fontSize="xs"
+            >
+              {isOnTarget ? 'On Target' : isOver ? 'Over' : 'Under'}
+            </Badge>
           </HStack>
 
-          {/* Value */}
+          {/* Value Display */}
           <Box>
             <Text fontSize="2xl" fontWeight="bold" color="text.primary">
               {formatCurrency(category.currentValue)}
             </Text>
             <HStack spacing={2} mt={1}>
               <HStack spacing={1} color={isPositive ? 'success.500' : 'error.500'}>
-                {isPositive ? <FiTrendingUp /> : <FiTrendingDown />}
+                {isPositive ? <FiTrendingUp size={14} /> : <FiTrendingDown size={14} />}
                 <Text fontSize="sm" fontWeight="medium">
                   {isPositive ? '+' : ''}{formatCurrency(Math.abs(valueChange))}
                 </Text>
@@ -97,54 +84,39 @@ export default function CategoryCard({ category, onSelect }: CategoryCardProps) 
             </HStack>
           </Box>
 
-          {/* Current vs Target with Fixed Progress Bar */}
+          {/* Allocation Progress */}
           <Box>
             <HStack justify="space-between" mb={2}>
-              <Text fontSize="sm" color="text.secondary">
-                Current: {formatPercent(category.currentPercentage)}
-              </Text>
-              <Text fontSize="sm" color="text.secondary">
-                Target: {formatPercent(category.targetPercentage)}
-              </Text>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="xs" color="text.secondary">Current</Text>
+                <Text fontSize="sm" fontWeight="medium" color="text.primary">
+                  {category.currentPercentage.toFixed(1)}%
+                </Text>
+              </VStack>
+              <VStack align="center" spacing={0}>
+                <Text fontSize="xs" color={isOnTarget ? 'text.secondary' : isOver ? 'orange.400' : 'blue.400'}>
+                  {targetDelta > 0 ? '+' : ''}{targetDelta.toFixed(1)}%
+                </Text>
+                <Text fontSize="xs" color={isOnTarget ? 'text.tertiary' : isOver ? 'orange.400' : 'blue.400'}>
+                  {category.delta >= 0 ? '+' : ''}{formatCurrency(Math.abs(category.delta))}
+                </Text>
+              </VStack>
+              <VStack align="end" spacing={0}>
+                <Text fontSize="xs" color="text.secondary">Target</Text>
+                <Text fontSize="sm" fontWeight="medium" color="text.secondary">
+                  {category.targetPercentage.toFixed(1)}%
+                </Text>
+              </VStack>
             </HStack>
             
-            {/* Progress bar: fills to 100% when on target, shows excess/deficit */}
-            <Box position="relative">
-              <Progress
-                value={Math.min(progressValue, 100)}
-                max={100}
-                colorScheme={isOnTarget ? 'green' : isUnder ? 'blue' : 'orange'}
-                bg="background.tertiary"
-                borderRadius="full"
-                h="6px"
-              />
-              {isOver && (
-                <Box
-                  position="absolute"
-                  top="0"
-                  left="0"
-                  right="0"
-                  bottom="0"
-                  borderRadius="full"
-                  bg={`linear-gradient(to right, orange.500 0%, orange.500 ${Math.min((progressValue - 100), 50)}%, transparent ${Math.min((progressValue - 100), 50)}%)`}
-                  opacity="0.3"
-                />
-              )}
-            </Box>
-            
-            {isOver && (
-              <HStack spacing={1} mt={1} color="orange.400">
-                <FiAlertCircle size={12} />
-                <Text fontSize="xs">
-                  {(progressValue - 100).toFixed(0)}% over target
-                </Text>
-              </HStack>
-            )}
-            {isUnder && (
-              <Text fontSize="xs" mt={1} color="blue.400">
-                {(100 - progressValue).toFixed(0)}% below target
-              </Text>
-            )}
+            <Progress
+              value={Math.min(progressValue, 100)}
+              max={100}
+              colorScheme={isOnTarget ? 'green' : isUnder ? 'blue' : 'orange'}
+              bg="background.tertiary"
+              borderRadius="full"
+              h="6px"
+            />
           </Box>
         </VStack>
       </CardBody>

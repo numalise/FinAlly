@@ -11,14 +11,13 @@ import {
   StatNumber,
   StatHelpText,
   StatArrow,
-  Grid,
-  GridItem,
   VStack,
 } from '@chakra-ui/react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import CombinedNetWorthChart from '@/components/dashboard/CombinedNetWorthChart';
 import AssetAllocationChart from '@/components/dashboard/AssetAllocationChart';
+import BudgetTable from '@/components/dashboard/BudgetTable';
 import { formatCurrency } from '@/utils/formatters';
 
 export default function DashboardPage() {
@@ -31,8 +30,10 @@ export default function DashboardPage() {
     netWorthHistory,
     projections,
     assetAllocation,
-    totalAssets,
-    totalCategories,
+    budgets,
+    totalBudget,
+    totalActualExpenses,
+    handleUpdateBudget,
   } = useDashboardData();
 
   const isPositiveChange = monthlyChange >= 0;
@@ -44,9 +45,9 @@ export default function DashboardPage() {
           Dashboard
         </Heading>
 
-        {/* Top Stats */}
+        {/* Top Stats - No Borders */}
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Net Worth</StatLabel>
@@ -61,7 +62,7 @@ export default function DashboardPage() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Monthly Change</StatLabel>
@@ -75,7 +76,7 @@ export default function DashboardPage() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Total Income</StatLabel>
@@ -89,7 +90,7 @@ export default function DashboardPage() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Total Expenses</StatLabel>
@@ -104,8 +105,20 @@ export default function DashboardPage() {
           </Card>
         </SimpleGrid>
 
-        {/* Combined Net Worth Chart */}
-        <Card>
+        {/* Budget Section First */}
+        <Card bg="background.secondary" border="none">
+          <CardBody>
+            <BudgetTable 
+              budgets={budgets}
+              totalBudget={totalBudget}
+              totalActualExpenses={totalActualExpenses}
+              onUpdateBudget={handleUpdateBudget}
+            />
+          </CardBody>
+        </Card>
+
+        {/* Net Worth Chart */}
+        <Card bg="background.secondary" border="none">
           <CardBody>
             <CombinedNetWorthChart 
               historicalData={netWorthHistory}
@@ -115,7 +128,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Asset Allocation */}
-        <Card>
+        <Card bg="background.secondary" border="none">
           <CardBody>
             <AssetAllocationChart data={assetAllocation} />
           </CardBody>

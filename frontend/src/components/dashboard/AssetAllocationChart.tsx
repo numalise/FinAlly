@@ -19,28 +19,16 @@ interface AssetAllocationProps {
 }
 
 const BLUE_PALETTE = [
-  '#2196f3',
-  '#1e88e5',
-  '#1976d2',
-  '#1565c0',
-  '#0d47a1',
-  '#64b5f6',
-  '#42a5f5',
-  '#90caf9',
+  '#2196f3', '#1e88e5', '#1976d2', '#1565c0',
+  '#0d47a1', '#64b5f6', '#42a5f5', '#90caf9',
 ];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <Box
-        bg="#1a1f2e"
-        border="1px solid #252d3d"
-        borderRadius="md"
-        p={3}
-        color="white"
-      >
-        <Text fontWeight="bold" fontSize="md">
+      <Box bg="#1a1f2e" border="none" borderRadius="md" p={3} shadow="lg">
+        <Text fontWeight="bold" fontSize="md" color="white">
           {data.category}: {formatCurrency(data.value)}
         </Text>
       </Box>
@@ -84,6 +72,7 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                   fill="#8884d8"
                   dataKey="value"
                   label={({ percentage }) => `${percentage}%`}
+                  stroke="none"
                 >
                   {data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={BLUE_PALETTE[index % BLUE_PALETTE.length]} />
@@ -99,19 +88,18 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
           <Table variant="simple" size="sm">
             <Thead>
               <Tr>
-                <Th>Category</Th>
-                <Th isNumeric>Current Value</Th>
-                <Th isNumeric>Current %</Th>
-                <Th isNumeric>Target Value</Th>
-                <Th isNumeric>Target %</Th>
-                <Th isNumeric>Delta</Th>
+                <Th border="none">Category</Th>
+                <Th border="none" isNumeric>Current Value</Th>
+                <Th border="none" isNumeric>Current %</Th>
+                <Th border="none" isNumeric>Target Value</Th>
+                <Th border="none" isNumeric>Target %</Th>
+                <Th border="none" isNumeric>Delta</Th>
               </Tr>
             </Thead>
             <Tbody>
               {data.map((item, index) => {
                 const deltaValue = item.value - item.target;
                 const deltaPercent = item.percentage - item.targetPercentage;
-                
                 const isOver = deltaValue > 0;
                 const isUnder = deltaValue < 0;
                 const isOnTarget = Math.abs(deltaPercent) < 1;
@@ -119,7 +107,7 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
 
                 return (
                   <Tr key={item.category}>
-                    <Td>
+                    <Td border="none">
                       <HStack spacing={2}>
                         <Box w="12px" h="12px" borderRadius="sm" bg={BLUE_PALETTE[index]} />
                         <Text color="text.primary" fontWeight="medium">
@@ -127,27 +115,27 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                         </Text>
                       </HStack>
                     </Td>
-                    <Td isNumeric>
+                    <Td border="none" isNumeric>
                       <Text color="text.primary" fontWeight="medium">
                         {formatCurrency(item.value)}
                       </Text>
                     </Td>
-                    <Td isNumeric>
+                    <Td border="none" isNumeric>
                       <Text color="text.primary">
                         {item.percentage.toFixed(1)}%
                       </Text>
                     </Td>
-                    <Td isNumeric>
+                    <Td border="none" isNumeric>
                       <Text color="text.secondary">
                         {formatCurrency(item.target)}
                       </Text>
                     </Td>
-                    <Td isNumeric>
+                    <Td border="none" isNumeric>
                       <Text color="text.secondary">
                         {item.targetPercentage.toFixed(1)}%
                       </Text>
                     </Td>
-                    <Td isNumeric>
+                    <Td border="none" isNumeric>
                       <VStack spacing={0} align="end">
                         <HStack spacing={1} color={deltaColor}>
                           {isOver ? <FiMinus size={12} /> : isUnder ? <FiPlus size={12} /> : null}
@@ -170,27 +158,23 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                   </Tr>
                 );
               })}
-              <Tr fontWeight="bold" borderTop="2px solid" borderColor="whiteAlpha.200">
-                <Td>
+              <Tr fontWeight="bold" borderTop="2px solid" borderColor="background.tertiary">
+                <Td border="none">
                   <Text color="text.primary">Total</Text>
                 </Td>
-                <Td isNumeric>
-                  <Text color="text.primary">
-                    {formatCurrency(totalValue)}
-                  </Text>
+                <Td border="none" isNumeric>
+                  <Text color="text.primary">{formatCurrency(totalValue)}</Text>
                 </Td>
-                <Td isNumeric>
+                <Td border="none" isNumeric>
                   <Text color="text.primary">100%</Text>
                 </Td>
-                <Td isNumeric>
-                  <Text color="text.secondary">
-                    {formatCurrency(totalValue)}
-                  </Text>
+                <Td border="none" isNumeric>
+                  <Text color="text.secondary">{formatCurrency(totalValue)}</Text>
                 </Td>
-                <Td isNumeric>
+                <Td border="none" isNumeric>
                   <Text color="text.secondary">100%</Text>
                 </Td>
-                <Td isNumeric>
+                <Td border="none" isNumeric>
                   <Text color="text.secondary">-</Text>
                 </Td>
               </Tr>

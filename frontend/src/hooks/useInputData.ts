@@ -9,6 +9,7 @@ interface Asset {
   categoryName: string;
   currentValue?: number;
   notes?: string;
+  marketCap?: number;
 }
 
 interface CashFlowItem {
@@ -19,7 +20,6 @@ interface CashFlowItem {
   description?: string;
 }
 
-// Store data across months (simulating backend)
 const dataStore: Record<string, {
   assets: Asset[];
   income: CashFlowItem[];
@@ -28,39 +28,32 @@ const dataStore: Record<string, {
 
 const getMonthKey = (year: number, month: number) => `${year}-${month}`;
 
-// Get current year/month
 const getCurrentYearMonth = () => {
   const now = new Date();
   return { year: now.getFullYear(), month: now.getMonth() + 1 };
 };
 
-// Initialize default data
 const initializeMonthData = (year: number, month: number) => {
   const key = getMonthKey(year, month);
   const { year: currentYear, month: currentMonth } = getCurrentYearMonth();
   
-  // Only return data for current and past months
   if (year > currentYear || (year === currentYear && month > currentMonth)) {
-    return {
-      assets: [],
-      income: [],
-      expenses: [],
-    };
+    return { assets: [], income: [], expenses: [] };
   }
   
   if (!dataStore[key]) {
     const variation = Math.sin(month) * 5000;
     dataStore[key] = {
       assets: [
-        { id: '1', name: 'Apple', ticker: 'AAPL', category: 'SINGLE_STOCKS', categoryName: 'Single Stocks', currentValue: 10000 + variation },
-        { id: '2', name: 'Microsoft', ticker: 'MSFT', category: 'SINGLE_STOCKS', categoryName: 'Single Stocks', currentValue: 10000 + variation * 0.8 },
-        { id: '3', name: 'Google', ticker: 'GOOGL', category: 'SINGLE_STOCKS', categoryName: 'Single Stocks', currentValue: 5000 + variation * 0.5 },
-        { id: '4', name: 'VWCE', ticker: 'VWCE', category: 'ETF_STOCKS', categoryName: 'ETF Stocks', currentValue: 20000 + variation * 2 },
-        { id: '5', name: 'S&P 500 ETF', ticker: 'SPY', category: 'ETF_STOCKS', categoryName: 'ETF Stocks', currentValue: 15000 + variation * 1.5 },
-        { id: '6', name: 'Government Bonds ETF', ticker: 'AGG', category: 'ETF_BONDS', categoryName: 'ETF Bonds', currentValue: 7000 },
-        { id: '7', name: 'Corporate Bonds ETF', ticker: 'LQD', category: 'ETF_BONDS', categoryName: 'ETF Bonds', currentValue: 3000 },
-        { id: '8', name: 'Bitcoin', ticker: 'BTC', category: 'CRYPTO', categoryName: 'Crypto', currentValue: 10000 + variation * 3 },
-        { id: '9', name: 'Ethereum', ticker: 'ETH', category: 'CRYPTO', categoryName: 'Crypto', currentValue: 5000 + variation * 2 },
+        { id: '1', name: 'Apple', ticker: 'AAPL', category: 'SINGLE_STOCKS', categoryName: 'Single Stocks', currentValue: 10000 + variation, marketCap: 3000000000000 },
+        { id: '2', name: 'Microsoft', ticker: 'MSFT', category: 'SINGLE_STOCKS', categoryName: 'Single Stocks', currentValue: 10000 + variation * 0.8, marketCap: 2500000000000 },
+        { id: '3', name: 'Google', ticker: 'GOOGL', category: 'SINGLE_STOCKS', categoryName: 'Single Stocks', currentValue: 5000 + variation * 0.5, marketCap: 1700000000000 },
+        { id: '4', name: 'VWCE', ticker: 'VWCE', category: 'ETF_STOCKS', categoryName: 'ETF Stocks', currentValue: 20000 + variation * 2, marketCap: 15000000000 },
+        { id: '5', name: 'S&P 500 ETF', ticker: 'SPY', category: 'ETF_STOCKS', categoryName: 'ETF Stocks', currentValue: 15000 + variation * 1.5, marketCap: 10000000000 },
+        { id: '6', name: 'Government Bonds ETF', ticker: 'AGG', category: 'ETF_BONDS', categoryName: 'ETF Bonds', currentValue: 7000, marketCap: 90000000000 },
+        { id: '7', name: 'Corporate Bonds ETF', ticker: 'LQD', category: 'ETF_BONDS', categoryName: 'ETF Bonds', currentValue: 3000, marketCap: 40000000000 },
+        { id: '8', name: 'Bitcoin', ticker: 'BTC', category: 'CRYPTO', categoryName: 'Crypto', currentValue: 10000 + variation * 3, marketCap: 1800000000000 },
+        { id: '9', name: 'Ethereum', ticker: 'ETH', category: 'CRYPTO', categoryName: 'Crypto', currentValue: 5000 + variation * 2, marketCap: 400000000000 },
         { id: '10', name: 'Startup Investment A', category: 'PRIVATE_EQUITY', categoryName: 'Private Equity', currentValue: 5000 },
         { id: '11', name: 'VC Fund B', category: 'PRIVATE_EQUITY', categoryName: 'Private Equity', currentValue: 3000 },
         { id: '12', name: 'Consulting Business', category: 'BUSINESS_PROFITS', categoryName: 'Business Profits', currentValue: 5000 },
@@ -98,14 +91,9 @@ export function useInputData(year: number, month: number) {
     setExpenseItems(data.expenses);
   }, [year, month]);
 
-  // Save to store when data changes
   useEffect(() => {
     const key = getMonthKey(year, month);
-    dataStore[key] = {
-      assets,
-      income: incomeItems,
-      expenses: expenseItems,
-    };
+    dataStore[key] = { assets, income: incomeItems, expenses: expenseItems };
   }, [assets, incomeItems, expenseItems, year, month]);
 
   const handleSaveAsset = (assetId: string, value: number, notes?: string) => {
@@ -117,16 +105,16 @@ export function useInputData(year: number, month: number) {
     console.log('Save asset value:', { assetId, value, notes, year, month });
   };
 
-  const handleEditAsset = (assetId: string, name: string, ticker?: string) => {
+  const handleEditAsset = (assetId: string, name: string, ticker?: string, marketCap?: number) => {
     setAssets(prev => prev.map(asset =>
       asset.id === assetId
-        ? { ...asset, name, ticker }
+        ? { ...asset, name, ticker, marketCap }
         : asset
     ));
-    console.log('Edit asset details:', { assetId, name, ticker, year, month });
+    console.log('Edit asset details:', { assetId, name, ticker, marketCap, year, month });
   };
 
-  const handleAddAsset = (category: string, name: string, ticker?: string) => {
+  const handleAddAsset = (category: string, name: string, ticker?: string, marketCap?: number) => {
     const categoryName = assets.find(a => a.category === category)?.categoryName || '';
     const newAsset: Asset = {
       id: `new-${Date.now()}`,
@@ -136,9 +124,10 @@ export function useInputData(year: number, month: number) {
       categoryName,
       currentValue: undefined,
       notes: undefined,
+      marketCap,
     };
     setAssets(prev => [...prev, newAsset]);
-    console.log('Add asset:', { category, name, ticker, year, month });
+    console.log('Add asset:', { category, name, ticker, marketCap, year, month });
   };
 
   const handleDeleteAsset = (assetId: string) => {

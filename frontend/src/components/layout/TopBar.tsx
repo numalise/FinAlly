@@ -18,12 +18,13 @@ import {
 } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { FiMenu, FiHome, FiPieChart, FiEdit3, FiBarChart2, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FiMenu, FiHome, FiPieChart, FiTrendingUp, FiDollarSign, FiBarChart2, FiSettings, FiLogOut } from 'react-icons/fi';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: FiHome },
   { name: 'Asset Allocation', href: '/allocation', icon: FiPieChart },
-  { name: 'Monthly Input', href: '/input', icon: FiEdit3 },
+  { name: 'Monthly Investments', href: '/investments', icon: FiTrendingUp },
+  { name: 'Cash Flow', href: '/cashflow', icon: FiDollarSign },
   { name: 'Analytics', href: '/analytics', icon: FiBarChart2 },
   { name: 'Settings', href: '/settings', icon: FiSettings },
 ];
@@ -55,7 +56,7 @@ export default function TopBar() {
         <Text fontSize="xl" fontWeight="bold" color="text.primary">
           FinAlly
         </Text>
-        <Box w="40px" /> {/* Spacer for centering */}
+        <Box w="40px" />
       </HStack>
 
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>

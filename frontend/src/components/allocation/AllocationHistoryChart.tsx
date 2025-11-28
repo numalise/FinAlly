@@ -6,7 +6,6 @@ import {
   Area,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   Legend,
@@ -19,7 +18,7 @@ interface AllocationHistoryChartProps {
     category: string; 
     categoryName: string; 
     color: string;
-    dataKey: string; // Add explicit data key for chart
+    dataKey: string;
   }>;
 }
 
@@ -31,34 +30,37 @@ export default function AllocationHistoryChart({ data, categories }: AllocationH
       </Heading>
       <ResponsiveContainer width="100%" height={400}>
         <AreaChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#252d3d" />
           <XAxis
             dataKey="month"
             stroke="#9aa0a6"
             style={{ fontSize: '12px' }}
+            axisLine={false}
+            tickLine={false}
           />
           <YAxis
             stroke="#9aa0a6"
             style={{ fontSize: '12px' }}
             tickFormatter={(value) => `${value}%`}
+            axisLine={false}
+            tickLine={false}
           />
           <Tooltip
             contentStyle={{
               backgroundColor: '#1a1f2e',
-              border: '1px solid #252d3d',
+              border: 'none',
               borderRadius: '8px',
               color: '#e8eaed',
             }}
             formatter={(value: number) => `${value}%`}
           />
-          <Legend wrapperStyle={{ color: '#9aa0a6' }} />
+          <Legend wrapperStyle={{ color: '#9aa0a6', paddingTop: '20px' }} />
           {categories.map((cat) => (
             <Area
               key={cat.category}
               type="monotone"
               dataKey={cat.dataKey}
               stackId="1"
-              stroke={cat.color}
+              stroke="none"
               fill={cat.color}
               name={cat.categoryName}
             />
