@@ -1,113 +1,85 @@
-import { APIGatewayProxyHandlerV2 } from 'aws-lambda';
-import { getPrismaClient } from '../lib/prisma.js';
-import { verifyToken, unauthorizedResponse } from '../middleware/auth.js';
-import { successResponse, errorResponse, handleError } from '../utils/response.js';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { PrismaClient } from '@prisma/client';
+import { successResponse, errorResponse } from '../utils/response';
 
-/**
- * Get current user profile
- * GET /users/me
- */
-export const getMe: APIGatewayProxyHandlerV2 = async (event) => {
-  const requestId = event.requestContext.requestId;
+export async function handleUsers(
+  event: APIGatewayProxyEvent,
+  prisma: PrismaClient,
+  userId: string
+): Promise<APIGatewayProxyResult> {
+  const method = event.httpMethod;
+  const path = event.path;
 
   try {
-    // Verify authentication
-    const auth = await verifyToken(event);
-    if (!auth) {
-      return unauthorizedResponse();
-    }
+    // GET /users/me
+    if (method === 'GET' && path === '/users/me') {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
 
-    const prisma = getPrismaClient();
+      if (!user) {
+        return errorResponse('User not found', 404);
+      }
 
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { cognitoSub: auth.userId },
-      select: {
-        id: true,
-        email: true,
-        displayName: true,
-        cognitoSub: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    // Auto-create user if not exists (post-confirmation hook alternative)
-    if (!user) {
-      console.log(`Creating new user for Cognito sub: ${auth.userId}`);
-      user = await prisma.user.create({
-        data: {
-          email: auth.email,
-          cognitoSub: auth.userId,
-          displayName: auth.username || auth.email.split('@')[0],
-        },
-        select: {
-          id: true,
-          email: true,
-          displayName: true,
-          cognitoSub: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+      return successResponse({
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
       });
     }
 
-    return successResponse(user, 200, requestId);
+    // PATCH /users/me
+    if (method === 'PATCH' && path === '/users/me') {
+      const body = JSON.parse(event.body || '{}');
+      
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          displayName: body.displayName || body.full_name,
+        },
+      });
+
+      return successResponse({
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+      });
+    }
+
+    // GET /export/data
+    if (method === 'GET' && path === '/export/data') {
+      const [assets, assetInputs, incomings, expenses, budgets, targets] = await Promise.all([
+        prisma.asset.findMany({ where: { userId } }),
+        prisma.assetInput.findMany({ where: { userId } }),
+        prisma.incomingItem.findMany({ where: { userId } }),
+        prisma.expenseItem.findMany({ where: { userId } }),
+        prisma.budget.findMany({ where: { userId } }),
+        prisma.categoryAllocationTarget.findMany({ where: { userId } }),
+      ]);
+
+      const exportData = {
+        exported_at: new Date().toISOString(),
+        assets,
+        asset_inputs: assetInputs,
+        incomings,
+        expenses,
+        budgets,
+        category_allocation_targets: targets,
+      };
+
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="finally-export-${Date.now()}.json"`,
+        },
+        body: JSON.stringify(exportData, null, 2),
+      };
+    }
+
+    return errorResponse('Route not found', 404);
   } catch (error) {
-    return handleError(error, requestId);
+    console.error('Users route error:', error);
+    return errorResponse(error instanceof Error ? error.message : 'Internal error', 500);
   }
-};
-
-/**
- * Update current user profile
- * PATCH /users/me
- */
-export const updateMe: APIGatewayProxyHandlerV2 = async (event) => {
-  const requestId = event.requestContext.requestId;
-
-  try {
-    // Verify authentication
-    const auth = await verifyToken(event);
-    if (!auth) {
-      return unauthorizedResponse();
-    }
-
-    // Parse and validate request body
-    if (!event.body) {
-      return errorResponse('VALIDATION_ERROR', 'Request body is required', 400, undefined, requestId);
-    }
-
-    const body = JSON.parse(event.body) as Record<string, unknown>;
-    const { displayName } = body;
-
-    if (!displayName || typeof displayName !== 'string' || displayName.trim().length === 0) {
-      return errorResponse(
-        'VALIDATION_ERROR',
-        'displayName must be a non-empty string',
-        400,
-        undefined,
-        requestId
-      );
-    }
-
-    const prisma = getPrismaClient();
-
-    // Update user
-    const user = await prisma.user.update({
-      where: { cognitoSub: auth.userId },
-      data: { displayName: displayName.trim() },
-      select: {
-        id: true,
-        email: true,
-        displayName: true,
-        cognitoSub: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    return successResponse(user, 200, requestId);
-  } catch (error) {
-    return handleError(error, requestId);
-  }
-};
+}
