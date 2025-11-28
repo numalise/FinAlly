@@ -56,7 +56,7 @@ export default function CashFlowPage() {
         </HStack>
 
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Total Income</StatLabel>
@@ -70,7 +70,7 @@ export default function CashFlowPage() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Total Expenses</StatLabel>
@@ -84,7 +84,7 @@ export default function CashFlowPage() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Net Savings</StatLabel>
@@ -98,7 +98,7 @@ export default function CashFlowPage() {
             </CardBody>
           </Card>
 
-          <Card>
+          <Card bg="background.secondary" border="none">
             <CardBody>
               <Stat>
                 <StatLabel color="text.secondary">Savings Rate</StatLabel>
@@ -113,7 +113,7 @@ export default function CashFlowPage() {
           </Card>
         </SimpleGrid>
 
-        <Card>
+        <Card bg="background.secondary" border="none">
           <CardBody>
             <CashFlowInputSection
               year={year}
