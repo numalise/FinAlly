@@ -1,29 +1,35 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PrismaClient } from '@prisma/client';
 import { successResponse, errorResponse } from '../utils/response';
+import { getPath, getMethod, getPathParts, getBody } from '../utils/eventHelpers';
 
 export async function handleAssets(
   event: APIGatewayProxyEvent,
   prisma: PrismaClient,
   userId: string
 ): Promise<APIGatewayProxyResult> {
-  const method = event.httpMethod;
-  const pathParts = event.path.split('/').filter(Boolean);
+  const path = getPath(event);
+  const method = getMethod(event);
+  const pathParts = getPathParts(event);
+  const queryParams = event.queryStringParameters || {};
 
   try {
     // GET /assets - List all user assets
     if (method === 'GET' && pathParts.length === 1) {
+      console.log('Fetching assets for user:', userId);
       const assets = await prisma.asset.findMany({
         where: { userId },
         include: { category: true },
         orderBy: [{ categoryId: 'asc' }, { assetName: 'asc' }],
       });
+      console.log('Found assets:', assets.length);
       return successResponse(assets);
     }
 
     // POST /assets - Create new asset
     if (method === 'POST') {
       const body = JSON.parse(event.body || '{}');
+      console.log('Creating asset:', body);
       const asset = await prisma.asset.create({
         data: {
           userId,
@@ -81,6 +87,7 @@ export async function handleAssets(
       return successResponse(null, 204);
     }
 
+    console.log('No route matched in handleAssets');
     return errorResponse('Route not found', 404);
   } catch (error) {
     console.error('Assets route error:', error);

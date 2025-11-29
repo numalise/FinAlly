@@ -337,3 +337,41 @@ resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch" {
   role       = aws_iam_role.api_gateway_cloudwatch.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
 }
+
+# ========================================
+# ECR Access (for Lambda container images)
+# ========================================
+
+resource "aws_iam_policy" "ecr_access" {
+  name_prefix = "${var.project_name}-${var.environment}-ecr-"
+  description = "Allow Lambda to pull container images from ECR"
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+        Resource = "arn:aws:ecr:${var.aws_region}:*:repository/${var.project_name}-${var.environment}-*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+  
+  tags = var.common_tags
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_ecr_access" {
+  role       = aws_iam_role.lambda_execution.name
+  policy_arn = aws_iam_policy.ecr_access.arn
+}

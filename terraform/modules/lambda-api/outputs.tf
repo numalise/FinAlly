@@ -13,11 +13,6 @@ output "lambda_invoke_arn" {
   value       = aws_lambda_function.api.invoke_arn
 }
 
-output "lambda_function_url" {
-  description = "Lambda Function URL (if enabled)"
-  value       = var.enable_function_url ? aws_lambda_function_url.api[0].function_url : null
-}
-
 output "log_group_name" {
   description = "CloudWatch Log Group name"
   value       = aws_cloudwatch_log_group.lambda.name

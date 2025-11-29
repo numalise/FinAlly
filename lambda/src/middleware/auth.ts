@@ -1,62 +1,57 @@
-import { APIGatewayProxyEvent } from 'aws-lambda';
-import { PrismaClient } from '@prisma/client';
+import { APIGatewayProxyEventV2 } from 'aws-lambda';
+import { CognitoJwtVerifier } from 'aws-jwt-verify';
 
-const prisma = new PrismaClient();
+const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID!;
+const WEB_CLIENT_ID = process.env.COGNITO_WEB_CLIENT_ID!;
+const BACKEND_CLIENT_ID = process.env.COGNITO_BACKEND_CLIENT_ID!;
 
-export async function authenticate(event: APIGatewayProxyEvent): Promise<string | null> {
+// Create verifier for both client IDs
+const verifier = CognitoJwtVerifier.create({
+  userPoolId: USER_POOL_ID,
+  tokenUse: 'id',
+  clientId: [WEB_CLIENT_ID, BACKEND_CLIENT_ID],
+});
+
+/**
+ * Authenticate user from JWT token
+ * Returns the user's Cognito sub (user ID)
+ */
+export async function authenticate(event: APIGatewayProxyEventV2): Promise<string | null> {
   try {
-    // Mock authentication for development
-    if (process.env.MOCK_AUTH === 'true') {
-      const testUser = await prisma.user.upsert({
-        where: { email: 'test@example.com' },
-        update: {},
-        create: {
-          email: 'test@example.com',
-          displayName: 'Test User',
-          cognitoSub: 'test-user-123',
-        },
-      });
-      return testUser.id;
-    }
-
-    // Extract JWT from Authorization header
-    const authHeader = event.headers?.Authorization || event.headers?.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('No valid Authorization header');
+    // Extract token from Authorization header
+    // HTTP API v2 format: event.headers is lowercase
+    const authHeader = event.headers?.authorization || event.headers?.Authorization;
+    
+    console.log('Auth header:', authHeader ? 'Present' : 'Missing');
+    console.log('All headers:', JSON.stringify(event.headers));
+    
+    if (!authHeader) {
+      console.log('No Authorization header found');
       return null;
     }
 
-    const token = authHeader.substring(7);
-    
-    // For now, decode without verification (add proper verification later)
-    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-    
-    if (!payload.sub) {
-      console.log('Invalid token payload');
+    // Extract token (handle both "Bearer <token>" and just "<token>")
+    const token = authHeader.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : authHeader;
+
+    if (!token) {
+      console.log('No token found in Authorization header');
       return null;
     }
 
-    const cognitoSub = payload.sub;
+    console.log('Token extracted, length:', token.length);
 
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { cognitoSub },
-    });
+    // Verify JWT token
+    const payload = await verifier.verify(token);
+    console.log('Token verified for user:', payload.sub);
 
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          cognitoSub,
-          email: payload.email || `user-${cognitoSub}@example.com`,
-          displayName: payload.name || null,
-        },
-      });
-      console.log('Created new user:', user.id);
-    }
-
-    return user.id;
+    return payload.sub;
   } catch (error) {
     console.error('Authentication error:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+    }
     return null;
   }
 }

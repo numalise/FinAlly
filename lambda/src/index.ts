@@ -1,7 +1,7 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { prisma } from './lib/prisma';
-import { authenticate } from './middleware/auth';
-import { successResponse, errorResponse } from './utils/response';
+import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 // Import route handlers
 import { handleAssets } from './routes/assets';
@@ -13,18 +13,23 @@ import { handleAllocation } from './routes/allocation';
 import { handleNetworth } from './routes/networth';
 import { handleUsers } from './handlers/users';
 import { handleHealth } from './handlers/health';
+import { authenticate } from './middleware/auth';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+  'Content-Type': 'application/json',
 };
 
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = async (event: any): Promise<APIGatewayProxyResultV2> => {
   console.log('Event:', JSON.stringify(event, null, 2));
 
-  const path = event.path || event.rawPath || '';
-  const method = event.httpMethod || event.requestContext?.http?.method || 'GET';
+  // HTTP API v2 structure
+  const path = event.rawPath || event.path || event.requestContext?.http?.path || '';
+  const method = event.requestContext?.http?.method || event.httpMethod || 'GET';
+
+  console.log('Parsed:', { path, method });
 
   // Handle CORS preflight
   if (method === 'OPTIONS') {
@@ -39,12 +44,12 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     // Health check - NO AUTH REQUIRED
     if (path === '/health' && method === 'GET') {
       console.log('Health check requested');
-      return await handleHealth(event);
+      return await handleHealth(event as any);
     }
 
     // All other routes require authentication
     console.log('Authenticating user...');
-    const userId = await authenticate(event);
+    const userId = await authenticate(event as any);
     
     if (!userId) {
       console.log('Authentication failed');
@@ -59,42 +64,42 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     // Route to appropriate handler
     if (path.startsWith('/assets')) {
-      return await handleAssets(event, prisma, userId);
+      return await handleAssets(event as any, prisma, userId);
     }
     
     if (path.startsWith('/asset-inputs')) {
-      return await handleAssetInputs(event, prisma, userId);
+      return await handleAssetInputs(event as any, prisma, userId);
     }
     
     if (path.startsWith('/incomings')) {
-      return await handleIncomings(event, prisma, userId);
+      return await handleIncomings(event as any, prisma, userId);
     }
     
     if (path.startsWith('/expenses')) {
-      return await handleExpenses(event, prisma, userId);
+      return await handleExpenses(event as any, prisma, userId);
     }
     
     if (path.startsWith('/budgets')) {
-      return await handleBudgets(event, prisma, userId);
+      return await handleBudgets(event as any, prisma, userId);
     }
     
     if (path.startsWith('/allocation') || path.startsWith('/category-allocation-targets')) {
-      return await handleAllocation(event, prisma, userId);
+      return await handleAllocation(event as any, prisma, userId);
     }
     
     if (path.startsWith('/networth')) {
-      return await handleNetworth(event, prisma, userId);
+      return await handleNetworth(event as any, prisma, userId);
     }
     
     if (path.startsWith('/users') || path.startsWith('/export')) {
-      return await handleUsers(event, prisma, userId);
+      return await handleUsers(event as any, prisma, userId);
     }
 
     console.log('Route not found:', path);
     return {
       statusCode: 404,
       headers: corsHeaders,
-      body: JSON.stringify({ error: 'Route not found' }),
+      body: JSON.stringify({ error: 'Route not found', path, method }),
     };
   } catch (error) {
     console.error('Lambda error:', error);

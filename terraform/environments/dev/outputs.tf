@@ -165,3 +165,11 @@ output "cognito_backend_client_id" {
   description = "Cognito Backend Client ID"
   value       = module.cognito.backend_client_id
 }
+
+# =====================================================================
+# ECR Outputs
+# =====================================================================
+
+output "ecr_repository_url" {
+  value = module.ecr.repository_url
+}

@@ -1,15 +1,16 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PrismaClient } from '@prisma/client';
 import { successResponse, errorResponse } from '../utils/response';
+import { getPath, getMethod, getPathParts, getBody } from '../utils/eventHelpers';
 
 export async function handleAllocation(
   event: APIGatewayProxyEvent,
   prisma: PrismaClient,
   userId: string
 ): Promise<APIGatewayProxyResult> {
-  const method = event.httpMethod;
-  const path = event.path;
-  const pathParts = path.split('/').filter(Boolean);
+  const path = getPath(event);
+  const method = getMethod(event);
+  const pathParts = getPathParts(event);
   const queryParams = event.queryStringParameters || {};
 
   try {
@@ -21,7 +22,11 @@ export async function handleAllocation(
 
       const currentInputs = await prisma.assetInput.findMany({
         where: { userId, year, month },
-        include: { asset: { include: { category: true } } },
+        include: { 
+          asset: { 
+            include: { category: true } 
+          } 
+        },
       });
 
       const prevMonth = month === 1 ? 12 : month - 1;
@@ -29,6 +34,11 @@ export async function handleAllocation(
 
       const previousInputs = await prisma.assetInput.findMany({
         where: { userId, year: prevYear, month: prevMonth },
+        include: { 
+          asset: { 
+            include: { category: true } 
+          } 
+        },
       });
 
       const targets = await prisma.categoryAllocationTarget.findMany({
@@ -70,7 +80,7 @@ export async function handleAllocation(
         const catId = input.asset.categoryId;
         if (categories[catId]) {
           categories[catId].previousValue += parseFloat(String(input.total));
-          const asset = categories[catId].assets.find((a: any) => a.id === input.assetId);
+          const asset = categories[catId].assets.find((a: any) => a.id === input.asset.id);
           if (asset) {
             asset.previousValue = parseFloat(String(input.total));
           }

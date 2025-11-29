@@ -25,7 +25,7 @@ resource "aws_apigatewayv2_api" "main" {
 }
 
 # =====================================================================
-# Cognito Authorizer - ACCEPTS BOTH WEB AND BACKEND CLIENTS
+# Cognito Authorizer
 # =====================================================================
 
 resource "aws_apigatewayv2_authorizer" "cognito" {
@@ -53,42 +53,231 @@ resource "aws_apigatewayv2_integration" "lambda" {
   integration_uri        = var.lambda_invoke_arn
   integration_method     = "POST"
   payload_format_version = "2.0"
-  
-  # Timeout (max 30s for Lambda)
-  timeout_milliseconds = 30000
+  timeout_milliseconds   = 30000
 }
 
 # =====================================================================
-# Routes
+# Routes - Health (No Auth)
 # =====================================================================
 
-# Health Check (no auth)
 resource "aws_apigatewayv2_route" "health" {
   api_id    = aws_apigatewayv2_api.main.id
   route_key = "GET /health"
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 
-# User Routes (with auth)
+# =====================================================================
+# Routes - Users (With Auth)
+# =====================================================================
+
 resource "aws_apigatewayv2_route" "get_me" {
-  api_id    = aws_apigatewayv2_api.main.id
-  route_key = "GET /users/me"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
-  
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /users/me"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_route" "update_me" {
-  api_id    = aws_apigatewayv2_api.main.id
-  route_key = "PATCH /users/me"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
-  
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PATCH /users/me"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
   authorization_type = "JWT"
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
-# OPTIONS routes for CORS (no auth)
+resource "aws_apigatewayv2_route" "export_data" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /export/data"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# =====================================================================
+# Routes - Assets (With Auth)
+# =====================================================================
+
+resource "aws_apigatewayv2_route" "get_assets" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /assets"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "create_asset" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "POST /assets"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "update_asset" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PATCH /assets/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "delete_asset" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /assets/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# =====================================================================
+# Routes - Asset Inputs (With Auth)
+# =====================================================================
+
+resource "aws_apigatewayv2_route" "get_asset_inputs" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /asset-inputs"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "create_asset_input" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "POST /asset-inputs"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# =====================================================================
+# Routes - Incomings (With Auth)
+# =====================================================================
+
+resource "aws_apigatewayv2_route" "get_incomings" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /incomings"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "create_incoming" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "POST /incomings"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "delete_incoming" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /incomings/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# =====================================================================
+# Routes - Expenses (With Auth)
+# =====================================================================
+
+resource "aws_apigatewayv2_route" "get_expenses" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /expenses"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "create_expense" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "POST /expenses"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "delete_expense" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /expenses/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# =====================================================================
+# Routes - Budgets (With Auth)
+# =====================================================================
+
+resource "aws_apigatewayv2_route" "get_budgets" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /budgets"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "update_budget" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PATCH /budgets/{category}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# =====================================================================
+# Routes - Allocation (With Auth)
+# =====================================================================
+
+resource "aws_apigatewayv2_route" "get_allocation" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /allocation"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "get_category_targets" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /category-allocation-targets"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "update_category_target" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PATCH /category-allocation-targets/{category}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# =====================================================================
+# Routes - Net Worth (With Auth)
+# =====================================================================
+
+resource "aws_apigatewayv2_route" "get_networth_history" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /networth/history"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "get_networth_projection" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /networth/projection"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# =====================================================================
+# CORS Options Route
+# =====================================================================
+
 resource "aws_apigatewayv2_route" "options" {
   api_id    = aws_apigatewayv2_api.main.id
   route_key = "OPTIONS /{proxy+}"
@@ -107,17 +296,17 @@ resource "aws_apigatewayv2_stage" "default" {
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway.arn
     format = jsonencode({
-      requestId      = "$context.requestId"
-      ip             = "$context.identity.sourceIp"
-      requestTime    = "$context.requestTime"
-      httpMethod     = "$context.httpMethod"
-      routeKey       = "$context.routeKey"
-      status         = "$context.status"
-      protocol       = "$context.protocol"
-      responseLength = "$context.responseLength"
-      errorMessage   = "$context.error.message"
+      requestId        = "$context.requestId"
+      ip               = "$context.identity.sourceIp"
+      requestTime      = "$context.requestTime"
+      httpMethod       = "$context.httpMethod"
+      routeKey         = "$context.routeKey"
+      status           = "$context.status"
+      protocol         = "$context.protocol"
+      responseLength   = "$context.responseLength"
+      errorMessage     = "$context.error.message"
       integrationError = "$context.integrationErrorMessage"
-      authorizerError = "$context.authorizer.error"
+      authorizerError  = "$context.authorizer.error"
     })
   }
   
@@ -129,16 +318,14 @@ resource "aws_apigatewayv2_stage" "default" {
   tags = var.common_tags
 }
 
-# CloudWatch Log Group for API Gateway
 resource "aws_cloudwatch_log_group" "api_gateway" {
   name              = "/aws/apigateway/${var.project_name}-${var.environment}"
   retention_in_days = var.log_retention_days
-  
-  tags = var.common_tags
+  tags              = var.common_tags
 }
 
 # =====================================================================
-# Lambda Permission for API Gateway
+# Lambda Permission
 # =====================================================================
 
 resource "aws_lambda_permission" "api_gateway" {

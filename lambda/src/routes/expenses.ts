@@ -1,14 +1,16 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PrismaClient } from '@prisma/client';
 import { successResponse, errorResponse } from '../utils/response';
+import { getPath, getMethod, getPathParts, getBody } from '../utils/eventHelpers';
 
 export async function handleExpenses(
   event: APIGatewayProxyEvent,
   prisma: PrismaClient,
   userId: string
 ): Promise<APIGatewayProxyResult> {
-  const method = event.httpMethod;
-  const pathParts = event.path.split('/').filter(Boolean);
+  const path = getPath(event);
+  const method = getMethod(event);
+  const pathParts = getPathParts(event);
   const queryParams = event.queryStringParameters || {};
 
   try {

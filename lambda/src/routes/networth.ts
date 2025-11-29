@@ -1,14 +1,17 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PrismaClient } from '@prisma/client';
 import { successResponse, errorResponse } from '../utils/response';
+import { getPath, getMethod, getPathParts, getBody } from '../utils/eventHelpers';
 
 export async function handleNetworth(
   event: APIGatewayProxyEvent,
   prisma: PrismaClient,
   userId: string
 ): Promise<APIGatewayProxyResult> {
-  const method = event.httpMethod;
-  const path = event.path;
+  const path = getPath(event);
+  const method = getMethod(event);
+  const pathParts = getPathParts(event);
+  const queryParams = event.queryStringParameters || {};
 
   try {
     // GET /networth/history

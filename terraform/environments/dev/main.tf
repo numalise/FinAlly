@@ -153,10 +153,12 @@ module "lambda_api" {
   environment  = var.environment
 
   # Lambda Configuration
-  lambda_zip_path           = "${path.module}/function.zip"
   lambda_execution_role_arn = module.iam.lambda_execution_role_arn
   private_subnet_ids        = module.networking.private_subnet_ids
   lambda_security_group_id  = module.security_groups.lambda_security_group_id
+
+  # CRITICAL: Must include :latest tag
+  lambda_image_uri = "${module.ecr.repository_url}:latest"
 
   # Database Connection
   database_url = "postgresql://${module.database.master_username}:${module.database.master_password}@${module.database.database_address}:${module.database.database_port}/${module.database.database_name}?schema=public&sslmode=require"
@@ -167,6 +169,8 @@ module "lambda_api" {
   cognito_backend_client_id = module.cognito.backend_client_id
 
   # Performance
+  memory_size          = 512
+  timeout              = 30
   reserved_concurrency = -1
 
   # Logging
@@ -177,7 +181,7 @@ module "lambda_api" {
 
   common_tags = local.common_tags
 
-  depends_on = [module.database, module.cognito]
+  depends_on = [module.database, module.cognito, module.ecr]
 }
 
 # =====================================================================
@@ -215,4 +219,14 @@ module "api_gateway" {
   common_tags = local.common_tags
 
   depends_on = [module.lambda_api]
+}
+
+# =====================================================================
+# Elastic Container Registry Module
+# =====================================================================
+
+module "ecr" {
+  source       = "../../modules/ecr"
+  project_name = var.project_name
+  environment  = var.environment
 }
