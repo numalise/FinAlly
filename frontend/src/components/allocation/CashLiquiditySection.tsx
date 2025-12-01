@@ -22,8 +22,8 @@ interface CashLiquiditySectionProps {
 }
 
 export default function CashLiquiditySection({ category }: CashLiquiditySectionProps) {
-  const isOver = category.delta > 0;
-  const isUnder = category.delta < 0;
+  const needsAdd = category.delta > 0;
+  const needsTrim = category.delta < 0;
   const isOnTarget = Math.abs(category.deltaPercentage) < 1;
 
   return (
@@ -57,11 +57,11 @@ export default function CashLiquiditySection({ category }: CashLiquiditySectionP
 
           <VStack align="start" spacing={1}>
             <Text fontSize="xs" color="text.secondary">Delta vs Target</Text>
-            <Text fontSize="xl" fontWeight="bold" color={isOnTarget ? 'text.secondary' : isOver ? 'orange.500' : 'blue.500'}>
+            <Text fontSize="xl" fontWeight="bold" color={isOnTarget ? 'text.secondary' : needsTrim ? 'orange.500' : 'blue.500'}>
               {formatCurrency(Math.abs(category.delta))}
             </Text>
             <Text fontSize="sm" color="text.secondary">
-              {isOver ? 'Remove' : isUnder ? 'Add' : 'On Target'}
+              {needsAdd ? 'Add' : needsTrim ? 'Remove' : 'On Target'}
             </Text>
           </VStack>
 
@@ -70,8 +70,8 @@ export default function CashLiquiditySection({ category }: CashLiquiditySectionP
             <Text fontSize="xl" fontWeight="bold" color="text.primary">
               {category.assets.length}
             </Text>
-            <Badge colorScheme={isOnTarget ? 'green' : isOver ? 'orange' : 'blue'} variant="subtle">
-              {isOnTarget ? 'On Target' : isOver ? 'Over' : 'Under'}
+            <Badge colorScheme={isOnTarget ? 'green' : needsTrim ? 'orange' : 'blue'} variant="subtle">
+              {isOnTarget ? 'On Target' : needsTrim ? 'Over' : 'Under'}
             </Badge>
           </VStack>
         </HStack>
@@ -91,7 +91,9 @@ export default function CashLiquiditySection({ category }: CashLiquiditySectionP
             </Thead>
             <Tbody>
               {category.assets.map((asset) => {
-                const percentOfCategory = (asset.currentValue / category.currentValue) * 100;
+                const percentOfCategory = category.currentValue > 0
+                  ? (asset.currentValue / category.currentValue) * 100
+                  : 0;
                 return (
                   <Tr key={asset.id}>
                     <Td border="none">

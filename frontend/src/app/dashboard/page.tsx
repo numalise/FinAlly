@@ -28,6 +28,13 @@ import { useNetworthHistory, useNetworthProjection } from '@/hooks/api/useNetwor
 import { useAllocation } from '@/hooks/api/useAllocation';
 import { useBudgets, useUpdateBudget } from '@/hooks/api/useBudgets';
 import { useIncomings, useExpenses } from '@/hooks/api/useCashFlow';
+import { normalizeAllocationData } from '@/utils/allocation';
+import type {
+  NetworthPoint,
+  NetworthProjectionPoint,
+  BudgetItem,
+  CashFlowItem,
+} from '@/types/api';
 
 export default function DashboardPage() {
   const currentDate = new Date();
@@ -37,7 +44,7 @@ export default function DashboardPage() {
   // Fetch data from API
   const { data: networthData, isLoading: networthLoading } = useNetworthHistory();
   const { data: projectionData, isLoading: projectionLoading } = useNetworthProjection();
-  const { data: allocationData, isLoading: allocationLoading } = useAllocation();
+  const { data: allocationData, isLoading: allocationLoading } = useAllocation(currentYear, currentMonth);
   const { data: budgetsData } = useBudgets(currentYear, currentMonth);
   const { data: incomingsData } = useIncomings(currentYear, currentMonth);
   const { data: expensesData } = useExpenses(currentYear, currentMonth);
@@ -59,54 +66,48 @@ export default function DashboardPage() {
   }
 
   // Parse data
-  const networthHistory = networthData?.data || [];
-  const projections = projectionData?.data || [];
-  const allocation = allocationData?.data || {};
-  const budgets = budgetsData?.data || [];
-  const incomings = incomingsData?.data || [];
-  const expenses = expensesData?.data || [];
+  const networthHistory: NetworthPoint[] = networthData?.data || [];
+  const projections: NetworthProjectionPoint[] = projectionData?.data || [];
+  const allocationRaw = allocationData?.data;
+  const normalizedAllocation = normalizeAllocationData(allocationRaw);
+  const budgets: BudgetItem[] = budgetsData?.data || [];
+  const incomings: CashFlowItem[] = incomingsData?.data || [];
+  const expenses: CashFlowItem[] = expensesData?.data || [];
 
-  // Calculate stats
-  const currentNetWorth = networthHistory.length > 0 
-    ? networthHistory[networthHistory.length - 1]?.net_worth || 0
-    : 0;
-  
-  const previousNetWorth = networthHistory.length > 1
-    ? networthHistory[networthHistory.length - 2]?.net_worth || 0
-    : 0;
-
-  const monthlyChange = currentNetWorth - previousNetWorth;
-  const monthlyChangePercent = previousNetWorth > 0 
+  const currentNetWorth = normalizedAllocation.netWorth;
+  const previousNetWorth = normalizedAllocation.previousNetWorth;
+  const monthlyChange = normalizedAllocation.totalChange;
+  const monthlyChangePercent = previousNetWorth > 0
     ? ((monthlyChange / previousNetWorth) * 100).toFixed(1)
     : '0.0';
   const isPositiveChange = monthlyChange >= 0;
 
-  const totalIncome = incomings.reduce((sum: number, item: any) => sum + item.amount, 0);
-  const totalExpenses = expenses.reduce((sum: number, item: any) => sum + item.amount, 0);
+  const totalIncome = incomings.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
 
-  const totalBudget = budgets.reduce((sum: number, b: any) => sum + b.budget_amount, 0);
-  const totalActualExpenses = budgets.reduce((sum: number, b: any) => sum + b.actual_amount, 0);
+  const totalBudget = budgets.reduce((sum, b) => sum + b.budget_amount, 0);
+  const totalActualExpenses = budgets.reduce((sum, b) => sum + b.actual_amount, 0);
 
   // Format allocation data for chart
-  const assetAllocation = allocation.categories?.map((cat: any) => ({
-    category: cat.category_name,
-    value: cat.current_value,
-    percentage: cat.current_percentage,
-    target: cat.target_value,
-    targetPercentage: cat.target_percentage,
-  })) || [];
+  const assetAllocation = normalizedAllocation.categories.map((cat) => ({
+    category: cat.categoryName,
+    value: cat.currentValue,
+    percentage: cat.currentPercentage,
+    target: cat.targetValue,
+    targetPercentage: cat.targetPercentage,
+  }));
 
   // Format networth history for chart
-  const netWorthHistory = networthHistory.map((item: any) => ({
-    month: new Date(item.year, item.month - 1).toLocaleDateString('en-US', { month: 'short' }),
-    value: item.net_worth,
+  const netWorthHistory = networthHistory.map((item) => ({
+    month: item.month ?? '',
+    value: item.value ?? item.net_worth ?? 0,
   }));
 
   // Format projections for chart
-  const projectionChart = projections.map((item: any) => ({
-    month: new Date(item.year, item.month - 1).toLocaleDateString('en-US', { month: 'short' }),
-    actual: item.actual_value,
-    projected: item.projected_value,
+  const projectionChart = projections.map((item) => ({
+    month: item.month ?? '',
+    actual: item.actual ?? item.actual_value,
+    projected: item.projected ?? item.projected_value ?? 0,
   }));
 
   const handleUpdateBudget = async (category: string, amount: number) => {

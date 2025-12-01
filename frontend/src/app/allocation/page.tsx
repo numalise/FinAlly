@@ -28,6 +28,7 @@ import CashLiquiditySection from '@/components/allocation/CashLiquiditySection';
 import AllocationHistoryChart from '@/components/allocation/AllocationHistoryChart';
 import { formatCurrency } from '@/utils/formatters';
 import { CategoryAllocation } from '@/types/allocation';
+import { normalizeAllocationData } from '@/utils/allocation';
 
 // ✅ Use REAL API hooks
 import { useAllocation, useUpdateCategoryTarget } from '@/hooks/api/useAllocation';
@@ -58,31 +59,21 @@ export default function AllocationPage() {
     );
   }
 
-  const allocation = allocationData?.data || {};
-  const categoriesData = allocation.categories || [];
-  const allocationHistory = allocation.history || [];
-  const totalValue = allocation.total_value || 0;
-  const previousTotalValue = allocation.previous_total_value || 0;
-  const totalChange = totalValue - previousTotalValue;
-  const totalChangePercent = previousTotalValue > 0 
-    ? ((totalChange / previousTotalValue) * 100).toFixed(1)
-    : '0.0';
+  const allocationRaw = allocationData?.data;
+  const normalized = normalizeAllocationData(allocationRaw);
+
+  const allocationHistory = allocationRaw?.history || [];
+  const netWorth = normalized.netWorth;
+  const previousNetWorth = normalized.previousNetWorth;
+  const totalChange = normalized.totalChange;
+  const totalChangePercent = previousNetWorth > 0
+    ? (totalChange / previousNetWorth) * 100
+    : 0;
 
   // Map API data to CategoryAllocation format
-  const categories: CategoryAllocation[] = categoriesData.map((cat: any, index: number) => ({
-    category: cat.category,
-    categoryName: cat.category_name,
-    currentValue: cat.current_value,
-    previousValue: cat.previous_value,
-    currentPercentage: cat.current_percentage,
-    previousPercentage: cat.previous_percentage,
-    targetPercentage: cat.target_percentage,
-    targetValue: cat.target_value,
-    delta: cat.delta,
-    deltaPercentage: cat.delta_percentage,
-    assets: cat.assets || [],
+  const categories: CategoryAllocation[] = normalized.categories.map((cat, index) => ({
+    ...cat,
     color: BLUE_PALETTE[index % BLUE_PALETTE.length],
-    hasMarketCapTargets: ['SINGLE_STOCKS', 'ETF_STOCKS', 'ETF_BONDS', 'CRYPTO'].includes(cat.category),
   }));
 
   const handleCategoryClick = (category: CategoryAllocation) => {
@@ -110,7 +101,7 @@ export default function AllocationPage() {
     }
   };
 
-  const isPositiveChange = parseFloat(totalChangePercent) >= 0;
+  const isPositiveChange = totalChange >= 0;
 
   const cashCategory = categories.find(c => c.category === 'CASH');
   const otherCategories = categories.filter(c => c.category !== 'CASH');
@@ -141,7 +132,7 @@ export default function AllocationPage() {
                 <Stat>
                   <StatLabel color="text.secondary">Total Portfolio Value</StatLabel>
                   <StatNumber color="text.primary" fontSize="2xl">
-                    {formatCurrency(totalValue)}
+                    {formatCurrency(netWorth)}
                   </StatNumber>
                   <StatHelpText color={isPositiveChange ? 'success.500' : 'error.500'}>
                     <StatArrow type={isPositiveChange ? 'increase' : 'decrease'} />
@@ -156,7 +147,7 @@ export default function AllocationPage() {
                 <Stat>
                   <StatLabel color="text.secondary">Monthly Change</StatLabel>
                   <StatNumber color="text.primary" fontSize="2xl">
-                    {totalChangePercent}%
+                    {totalChangePercent.toFixed(1)}%
                   </StatNumber>
                   <StatHelpText color="text.secondary">
                     {isPositiveChange ? 'Growth' : 'Decline'} vs previous month

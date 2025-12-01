@@ -28,8 +28,10 @@ import { formatCurrency } from '@/utils/formatters';
 
 // ✅ Use REAL API hooks
 import { useAssets, useCreateAsset, useUpdateAsset, useDeleteAsset } from '@/hooks/api/useAssets';
-import { useAssetInputs, useSaveAssetInput } from '@/hooks/api/useAssetInputs';
+import { useAssetInputs, useSaveAssetInput, type AssetInputItem } from '@/hooks/api/useAssetInputs';
 import { useIncomings, useExpenses, useCreateIncoming, useCreateExpense, useDeleteIncoming, useDeleteExpense } from '@/hooks/api/useCashFlow';
+import type { Asset, CashFlowItem } from '@/types/api';
+import { mergeAssetsWithInputs, type UiAsset } from '@/utils/assets';
 
 export default function InputPage() {
   const toast = useToast();
@@ -66,43 +68,30 @@ export default function InputPage() {
   }
 
   // Parse API responses
-  const assets = assetsData?.data || [];
-  const assetInputs = assetInputsData?.data || [];
-  const incomings = incomingsData?.data || [];
-  const expenses = expensesData?.data || [];
+  const assets: Asset[] = assetsData?.data || [];
+  const assetInputs: AssetInputItem[] = assetInputsData?.data || [];
+  const incomings: CashFlowItem[] = incomingsData?.data || [];
+  const expenses: CashFlowItem[] = expensesData?.data || [];
 
-  // Merge assets with their current values from assetInputs
-  const assetsWithValues = assets.map((asset: any) => {
-    const input = assetInputs.find((inp: any) => inp.asset_id === asset.id);
-    return {
-      id: asset.id,
-      name: asset.asset_name,
-      ticker: asset.ticker,
-      category: asset.category_id,
-      categoryName: asset.category?.category_name || asset.category_id,
-      currentValue: input?.total,
-      notes: input?.notes,
-      marketCap: asset.market_cap ? parseFloat(asset.market_cap) : undefined,
-    };
-  });
+  const assetsWithValues: UiAsset[] = mergeAssetsWithInputs(assets, assetInputs);
 
-  const assetsByCategory = {
-    SINGLE_STOCKS: assetsWithValues.filter((a: any) => a.category === 'SINGLE_STOCKS'),
-    ETF_STOCKS: assetsWithValues.filter((a: any) => a.category === 'ETF_STOCKS'),
-    ETF_BONDS: assetsWithValues.filter((a: any) => a.category === 'ETF_BONDS'),
-    CRYPTO: assetsWithValues.filter((a: any) => a.category === 'CRYPTO'),
-    PRIVATE_EQUITY: assetsWithValues.filter((a: any) => a.category === 'PRIVATE_EQUITY'),
-    BUSINESS_PROFITS: assetsWithValues.filter((a: any) => a.category === 'BUSINESS_PROFITS'),
-    REAL_ESTATE: assetsWithValues.filter((a: any) => a.category === 'REAL_ESTATE'),
-    CASH: assetsWithValues.filter((a: any) => a.category === 'CASH'),
+  const assetsByCategory: Record<string, UiAsset[]> = {
+    SINGLE_STOCKS: assetsWithValues.filter((a) => a.category === 'SINGLE_STOCKS'),
+    ETF_STOCKS: assetsWithValues.filter((a) => a.category === 'ETF_STOCKS'),
+    ETF_BONDS: assetsWithValues.filter((a) => a.category === 'ETF_BONDS'),
+    CRYPTO: assetsWithValues.filter((a) => a.category === 'CRYPTO'),
+    PRIVATE_EQUITY: assetsWithValues.filter((a) => a.category === 'PRIVATE_EQUITY'),
+    BUSINESS_PROFITS: assetsWithValues.filter((a) => a.category === 'BUSINESS_PROFITS'),
+    REAL_ESTATE: assetsWithValues.filter((a) => a.category === 'REAL_ESTATE'),
+    CASH: assetsWithValues.filter((a) => a.category === 'CASH'),
   };
 
-  const totalAssetValue = assetsWithValues.reduce((sum: number, a: any) => sum + (a.currentValue || 0), 0);
-  const totalIncome = incomings.reduce((sum: number, item: any) => sum + item.amount, 0);
-  const totalExpenses = expenses.reduce((sum: number, item: any) => sum + item.amount, 0);
+  const totalAssetValue = assetsWithValues.reduce((sum, a) => sum + (a.currentValue || 0), 0);
+  const totalIncome = incomings.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
   const netSavings = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
-  const assetsWithValuesCount = assetsWithValues.filter((a: any) => a.currentValue !== undefined).length;
+  const assetsWithValuesCount = assetsWithValues.filter((a) => a.currentValue !== undefined).length;
 
   // Handlers
   const handleSaveAsset = async (assetId: string, value: number, notes?: string) => {

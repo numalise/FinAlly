@@ -26,6 +26,7 @@ import { formatCurrency } from '@/utils/formatters';
 
 // ✅ Use REAL API hooks
 import { useIncomings, useExpenses, useCreateIncoming, useCreateExpense, useDeleteIncoming, useDeleteExpense } from '@/hooks/api/useCashFlow';
+import type { CashFlowItem } from '@/types/api';
 
 export default function CashFlowPage() {
   const toast = useToast();
@@ -57,11 +58,11 @@ export default function CashFlowPage() {
     );
   }
 
-  const incomings = incomingsData?.data || [];
-  const expenses = expensesData?.data || [];
+  const incomings: CashFlowItem[] = incomingsData?.data || [];
+  const expenses: CashFlowItem[] = expensesData?.data || [];
 
-  const totalIncome = incomings.reduce((sum: number, item: any) => sum + item.amount, 0);
-  const totalExpenses = expenses.reduce((sum: number, item: any) => sum + item.amount, 0);
+  const totalIncome = incomings.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
   const netSavings = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
 

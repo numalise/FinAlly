@@ -15,7 +15,6 @@ import {
   HStack,
   Switch,
   Select,
-  Divider,
   useToast,
   Table,
   Thead,
@@ -23,51 +22,98 @@ import {
   Tr,
   Th,
   Td,
-  IconButton,
 } from '@chakra-ui/react';
-import { FiSave, FiEdit2, FiDownload } from 'react-icons/fi';
-import { useState } from 'react';
+import { FiSave, FiDownload } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { api } from '@/lib/api';
+
+interface AllocationTargetRow {
+  category: string;
+  name: string;
+  target: number;
+}
 
 export default function SettingsPage() {
   const toast = useToast();
-  
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isSavingUser, setIsSavingUser] = useState(false);
+  const [isSavingTargets, setIsSavingTargets] = useState(false);
+
   // User Profile
-  const [fullName, setFullName] = useState('Emanuele');
-  const [email, setEmail] = useState('emanuele@example.com');
-  
-  // Preferences
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+
+  // Preferences (client-side only for now)
   const [currency, setCurrency] = useState('EUR');
   const [language, setLanguage] = useState('en');
   const [darkMode, setDarkMode] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
-  
+
   // Category Targets
-  const [targets, setTargets] = useState([
-    { category: 'SINGLE_STOCKS', name: 'Single Stocks', target: 20 },
-    { category: 'ETF_STOCKS', name: 'ETF Stocks', target: 25 },
-    { category: 'ETF_BONDS', name: 'ETF Bonds', target: 10 },
-    { category: 'CRYPTO', name: 'Crypto', target: 10 },
-    { category: 'PRIVATE_EQUITY', name: 'Private Equity', target: 5 },
-    { category: 'BUSINESS_PROFITS', name: 'Business Profits', target: 5 },
-    { category: 'REAL_ESTATE', name: 'Real Estate', target: 20 },
-    { category: 'CASH', name: 'Cash Liquidity', target: 5 },
-  ]);
+  const [targets, setTargets] = useState<AllocationTargetRow[]>([]);
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const [userRes, targetsRes] = await Promise.all([
+          api.getCurrentUser(),
+          api.getCategoryTargets(),
+        ]);
+
+        const user = userRes.data?.data ?? userRes.data;
+        setFullName(user.full_name || user.displayName || '');
+        setEmail(user.email || '');
+
+        const apiTargets: any[] = targetsRes.data?.data ?? targetsRes.data ?? [];
+        const mapped: AllocationTargetRow[] = apiTargets.map((t) => ({
+          category: t.category,
+          name: t.category_name ?? t.categoryName ?? t.category,
+          target: typeof t.target_pct === 'number' ? t.target_pct : Number(t.target_pct ?? 0),
+        }));
+
+        setTargets(mapped);
+      } catch (error) {
+        toast({
+          title: 'Failed to load settings',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+
+    loadInitialData();
+  }, [toast]);
 
   const handleSaveProfile = () => {
-    console.log('Save profile:', { fullName, email });
-    toast({
-      title: 'Profile updated',
-      description: 'Your profile information has been saved.',
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
-    // TODO: API call to PATCH /users/me
+    setIsSavingUser(true);
+    api
+      .updateUser({ displayName: fullName, full_name: fullName })
+      .then(() => {
+        toast({
+          title: 'Profile updated',
+          description: 'Your profile information has been saved.',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      })
+      .catch(() => {
+        toast({
+          title: 'Failed to update profile',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      })
+      .finally(() => setIsSavingUser(false));
   };
 
   const handleSavePreferences = () => {
-    console.log('Save preferences:', { currency, language, darkMode, emailNotifications });
     toast({
       title: 'Preferences updated',
       description: 'Your preferences have been saved.',
@@ -75,7 +121,6 @@ export default function SettingsPage() {
       duration: 3000,
       isClosable: true,
     });
-    // TODO: API call to PATCH /users/me/preferences
   };
 
   const handleUpdateTarget = (category: string, value: number) => {
@@ -85,34 +130,72 @@ export default function SettingsPage() {
   };
 
   const handleSaveTargets = () => {
-    console.log('Save targets:', targets);
-    toast({
-      title: 'Allocation targets updated',
-      description: 'Your category targets have been saved.',
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
-    // TODO: API call to PATCH /category-allocation-targets
+    setIsSavingTargets(true);
+
+    Promise.all(
+      targets.map((t) =>
+        api.updateCategoryTarget(t.category, t.target),
+      ),
+    )
+      .then(() => {
+        toast({
+          title: 'Allocation targets updated',
+          description: 'Your category targets have been saved.',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      })
+      .catch(() => {
+        toast({
+          title: 'Failed to update allocation targets',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      })
+      .finally(() => setIsSavingTargets(false));
   };
 
   const handleExportData = () => {
-    console.log('Export data requested');
-    toast({
-      title: 'Export started',
-      description: 'Your data export will download shortly.',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
-    // TODO: API call to GET /export/data
+    api
+      .exportData()
+      .then((response) => {
+        const blob = new Blob([JSON.stringify(response.data, null, 2)], {
+          type: 'application/json',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'finally-export.json';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        toast({
+          title: 'Export ready',
+          description: 'Your data export has been downloaded.',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      })
+      .catch(() => {
+        toast({
+          title: 'Export failed',
+          description: 'Unable to export your data right now.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      });
   };
 
   const totalTarget = targets.reduce((sum, t) => sum + t.target, 0);
   const isValidTargets = totalTarget === 100;
 
   return (
-    <MainLayout>
+    <ProtectedRoute>
+      <MainLayout>
       <VStack spacing={8} align="stretch">
         <Box>
           <Heading size="lg" mb={2} color="text.primary">
@@ -140,6 +223,7 @@ export default function SettingsPage() {
                     bg="background.tertiary"
                     color="text.primary"
                     border="none"
+                    isDisabled={isLoadingUser}
                   />
                 </FormControl>
 
@@ -152,6 +236,7 @@ export default function SettingsPage() {
                     bg="background.tertiary"
                     color="text.primary"
                     border="none"
+                    isDisabled
                   />
                 </FormControl>
               </SimpleGrid>
@@ -161,6 +246,8 @@ export default function SettingsPage() {
                   leftIcon={<FiSave />}
                   colorScheme="blue"
                   onClick={handleSaveProfile}
+                  isLoading={isSavingUser}
+                  isDisabled={isLoadingUser}
                 >
                   Save Profile
                 </Button>
@@ -280,7 +367,14 @@ export default function SettingsPage() {
                           <Input
                             type="number"
                             value={target.target}
-                            onChange={(e) => handleUpdateTarget(target.category, parseFloat(e.target.value))}
+                            onChange={(e) =>
+                              handleUpdateTarget(
+                                target.category,
+                                Number.isNaN(parseFloat(e.target.value))
+                                  ? 0
+                                  : parseFloat(e.target.value),
+                              )
+                            }
                             step="0.1"
                             min="0"
                             max="100"
@@ -304,7 +398,8 @@ export default function SettingsPage() {
                   leftIcon={<FiSave />}
                   colorScheme="blue"
                   onClick={handleSaveTargets}
-                  isDisabled={!isValidTargets}
+                  isDisabled={!isValidTargets || isSavingTargets}
+                  isLoading={isSavingTargets}
                 >
                   Save Targets
                 </Button>

@@ -18,19 +18,14 @@ import {
 } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { FiMenu, FiHome, FiPieChart, FiTrendingUp, FiDollarSign, FiSettings, FiLogOut } from 'react-icons/fi';
-
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: FiHome },
-  { name: 'Asset Allocation', href: '/allocation', icon: FiPieChart },
-  { name: 'Monthly Investments', href: '/investments', icon: FiTrendingUp },
-  { name: 'Cash Flow', href: '/cashflow', icon: FiDollarSign },
-  { name: 'Settings', href: '/settings', icon: FiSettings },
-];
+import { FiMenu, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '@/contexts/AuthContext';
+import { mainNavigation } from '@/config/navigation';
 
 export default function TopBar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   return (
     <Box
@@ -66,7 +61,7 @@ export default function TopBar() {
 
           <DrawerBody>
             <VStack spacing={1} align="stretch">
-              {navigation.map((item) => {
+              {mainNavigation.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link key={item.name} href={item.href} onClick={onClose}>
@@ -100,6 +95,10 @@ export default function TopBar() {
                   w="full"
                   color="text.secondary"
                   _hover={{ bg: 'background.tertiary', color: 'text.primary' }}
+                  onClick={() => {
+                    onClose();
+                    logout();
+                  }}
                 >
                   Logout
                 </Button>

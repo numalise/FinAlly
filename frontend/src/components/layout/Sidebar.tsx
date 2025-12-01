@@ -3,18 +3,13 @@
 import { Box, VStack, HStack, Text, Icon, Button } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { FiHome, FiPieChart, FiTrendingUp, FiDollarSign, FiSettings, FiLogOut } from 'react-icons/fi';
-
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: FiHome },
-  { name: 'Asset Allocation', href: '/allocation', icon: FiPieChart },
-  { name: 'Monthly Investments', href: '/investments', icon: FiTrendingUp },
-  { name: 'Cash Flow', href: '/cashflow', icon: FiDollarSign },
-  { name: 'Settings', href: '/settings', icon: FiSettings },
-];
+import { FiLogOut } from 'react-icons/fi';
+import { useAuth } from '@/contexts/AuthContext';
+import { mainNavigation } from '@/config/navigation';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   return (
     <Box
@@ -50,7 +45,7 @@ export default function Sidebar() {
           </HStack>
 
           <VStack spacing={1} align="stretch">
-            {navigation.map((item) => {
+            {mainNavigation.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link key={item.name} href={item.href}>
@@ -85,6 +80,7 @@ export default function Sidebar() {
           justifyContent="flex-start"
           color="text.secondary"
           _hover={{ bg: 'background.tertiary', color: 'text.primary' }}
+          onClick={logout}
         >
           Logout
         </Button>

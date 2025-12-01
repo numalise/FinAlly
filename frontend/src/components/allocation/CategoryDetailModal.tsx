@@ -84,6 +84,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
 
   const colors = generateShades(category.color, category.assets.length);
   const totalCategoryValue = category.currentValue;
+  const targetBaseValue = category.targetValue;
   const totalMarketCap = category.assets
     .filter(a => a.marketCap)
     .reduce((sum, a) => sum + (a.marketCap || 0), 0);
@@ -93,10 +94,10 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
     totalCategoryValue,
   }));
 
-  const isOverAllocated = category.delta > 0;
-  const isUnderAllocated = category.delta < 0;
+  const isUnderAllocated = category.delta > 0;
+  const isOverAllocated = category.delta < 0;
   const deltaColor = isOverAllocated ? 'orange.500' : isUnderAllocated ? 'blue.500' : 'text.secondary';
-  const DeltaIcon = isOverAllocated ? FiMinus : FiPlus;
+  const DeltaIcon = isUnderAllocated ? FiPlus : FiMinus;
 
   const handleEditTarget = () => {
     setEditTargetPct(category.targetPercentage.toString());
@@ -170,13 +171,13 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                     Delta vs Target
                   </Text>
                   <HStack spacing={1} color={deltaColor}>
-                    <DeltaIcon />
+                    {isUnderAllocated || isOverAllocated ? <DeltaIcon /> : null}
                     <VStack align="start" spacing={0}>
                       <Text fontSize="xl" fontWeight="bold">
                         {formatCurrency(Math.abs(category.delta))}
                       </Text>
                       <Text fontSize="xs">
-                        {isOverAllocated ? 'Remove' : isUnderAllocated ? 'Add' : 'On Target'}
+                        {isUnderAllocated ? 'Add' : isOverAllocated ? 'Remove' : 'On Target'}
                       </Text>
                     </VStack>
                   </HStack>
@@ -226,7 +227,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                         <Th border="none">Ticker</Th>
                         {category.hasMarketCapTargets && <Th border="none" isNumeric>Market Cap</Th>}
                         <Th border="none" isNumeric>Current Value</Th>
-                        <Th border="none" isNumeric>% of Category</Th>
+                        <Th border="none" isNumeric>% of Target</Th>
                         {category.hasMarketCapTargets && <Th border="none" isNumeric>Target %</Th>}
                         {category.hasMarketCapTargets && <Th border="none" isNumeric>Target Value</Th>}
                         {category.hasMarketCapTargets && <Th border="none" isNumeric>Delta</Th>}
@@ -234,7 +235,9 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                     </Thead>
                     <Tbody>
                       {category.assets.map((asset, index) => {
-                        const percentOfCategory = (asset.currentValue / totalCategoryValue) * 100;
+                        const percentOfTarget = targetBaseValue > 0
+                          ? (asset.currentValue / targetBaseValue) * 100
+                          : 0;
                         
                         let targetPct = 0;
                         let targetValue = 0;
@@ -242,13 +245,13 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                         
                         if (category.hasMarketCapTargets && asset.marketCap && totalMarketCap > 0) {
                           targetPct = (asset.marketCap / totalMarketCap) * 100;
-                          targetValue = (targetPct / 100) * totalCategoryValue;
-                          delta = asset.currentValue - targetValue;
+                          targetValue = (targetPct / 100) * targetBaseValue;
+                          delta = targetValue - asset.currentValue;
                         }
 
-                        const assetIsOver = delta > 0;
-                        const assetIsUnder = delta < 0;
-                        const assetDeltaColor = assetIsOver ? 'orange.500' : assetIsUnder ? 'blue.500' : 'text.secondary';
+                        const assetNeedsAdd = delta > 0;
+                        const assetNeedsTrim = delta < 0;
+                        const assetDeltaColor = assetNeedsTrim ? 'orange.500' : assetNeedsAdd ? 'blue.500' : 'text.secondary';
 
                         return (
                           <Tr key={asset.id}>
@@ -283,7 +286,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                             </Td>
                             <Td border="none" isNumeric>
                               <Text color="text.primary" fontSize="sm">
-                                {percentOfCategory.toFixed(1)}%
+                                {percentOfTarget.toFixed(1)}%
                               </Text>
                             </Td>
                             {category.hasMarketCapTargets && (
@@ -302,13 +305,13 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                                   {targetValue > 0 ? (
                                     <VStack spacing={0} align="end">
                                       <HStack spacing={1} color={assetDeltaColor}>
-                                        {assetIsOver ? <FiMinus size={10} /> : assetIsUnder ? <FiPlus size={10} /> : null}
+                                        {assetNeedsTrim ? <FiMinus size={10} /> : assetNeedsAdd ? <FiPlus size={10} /> : null}
                                         <Text fontSize="sm" fontWeight="medium">
                                           {formatCurrency(Math.abs(delta))}
                                         </Text>
                                       </HStack>
                                       <Text fontSize="xs" color="text.tertiary">
-                                        {assetIsOver ? 'Remove' : assetIsUnder ? 'Add' : 'OK'}
+                                        {assetNeedsAdd ? 'Add' : assetNeedsTrim ? 'Remove' : 'OK'}
                                       </Text>
                                     </VStack>
                                   ) : (
