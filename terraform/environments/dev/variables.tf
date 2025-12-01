@@ -167,7 +167,7 @@ variable "google_client_secret" {
 variable "cognito_callback_urls" {
   description = "Cognito callback URLs"
   type        = list(string)
-  default     = ["http://localhost:3000/auth/callback"]
+  default     = ["http://localhost:3000/login"]
 }
 
 variable "cognito_logout_urls" {

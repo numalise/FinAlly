@@ -50,6 +50,7 @@ interface SimplifiedAssetFormProps {
   assets: Asset[];
   onSave: (assetId: string, value: number, notes?: string) => void;
   onAdd: (category: string, name: string, ticker?: string, marketCap?: number) => void;
+  onAddWithValue?: (category: string, name: string, value: number, ticker?: string, marketCap?: number, notes?: string) => Promise<void>;
   onDelete: (assetId: string) => void;
   onEditAsset: (assetId: string, name: string, ticker?: string, marketCap?: number) => void;
   requiresTicker?: boolean;
@@ -63,6 +64,7 @@ export default function SimplifiedAssetForm({
   assets,
   onSave,
   onAdd,
+  onAddWithValue,
   onDelete,
   onEditAsset,
   requiresTicker = false,
@@ -82,6 +84,9 @@ export default function SimplifiedAssetForm({
   const [newName, setNewName] = useState('');
   const [newTicker, setNewTicker] = useState('');
   const [newMarketCap, setNewMarketCap] = useState('');
+  const [newValue, setNewValue] = useState('');
+  const [newNotes, setNewNotes] = useState('');
+  const [isAddingWithValue, setIsAddingWithValue] = useState(false);
 
   const totalValue = assets.reduce((sum, a) => sum + (a.currentValue || 0), 0);
   const assetsWithValues = assets.filter(a => a.currentValue !== undefined).length;
@@ -110,14 +115,51 @@ export default function SimplifiedAssetForm({
     }
   };
 
-  const handleAdd = () => {
+  const handleOpenAdd = () => {
+    setNewName('');
+    setNewTicker('');
+    setNewMarketCap('');
+    setNewValue('');
+    setNewNotes('');
+    setIsAddingWithValue(false);
+    onAddOpen();
+  };
+
+  const handleAdd = async () => {
     if (newName) {
       const marketCapValue = newMarketCap ? parseFloat(newMarketCap) * 1000000000 : undefined;
-      onAdd(categoryCode, newName, newTicker || undefined, marketCapValue);
-      onAddClose();
-      setNewName('');
-      setNewTicker('');
-      setNewMarketCap('');
+      
+      if (newValue && onAddWithValue) {
+        // Create asset AND add value in one step
+        setIsAddingWithValue(true);
+        try {
+          await onAddWithValue(
+            categoryCode,
+            newName,
+            parseFloat(newValue),
+            newTicker || undefined,
+            marketCapValue,
+            newNotes || undefined
+          );
+          onAddClose();
+          setNewName('');
+          setNewTicker('');
+          setNewMarketCap('');
+          setNewValue('');
+          setNewNotes('');
+        } finally {
+          setIsAddingWithValue(false);
+        }
+      } else {
+        // Just create asset (old behavior)
+        onAdd(categoryCode, newName, newTicker || undefined, marketCapValue);
+        onAddClose();
+        setNewName('');
+        setNewTicker('');
+        setNewMarketCap('');
+        setNewValue('');
+        setNewNotes('');
+      }
     }
   };
 
@@ -156,7 +198,7 @@ export default function SimplifiedAssetForm({
             variant="ghost"
             onClick={(e) => {
               e.stopPropagation();
-              onAddOpen();
+              handleOpenAdd();
             }}
           >
             Add
@@ -172,80 +214,86 @@ export default function SimplifiedAssetForm({
 
       <Collapse in={isExpanded}>
         <Box p={4}>
-          <Table variant="simple" size="sm">
-            <Thead>
-              <Tr>
-                <Th border="none" width="25%">Asset</Th>
-                {requiresTicker && <Th border="none" width="12%">Ticker</Th>}
-                {hasMarketCap && <Th border="none" width="13%" isNumeric>Market Cap</Th>}
-                <Th border="none" width="15%" isNumeric>Value</Th>
-                <Th border="none" width="30%">Notes</Th>
-                <Th border="none" width="5%"></Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {assets.map((asset) => (
-                <Tr key={asset.id} _hover={{ bg: 'background.tertiary' }}>
-                  <Td border="none">
-                    <Text color="text.primary" fontWeight="medium">
-                      {asset.name}
-                    </Text>
-                  </Td>
-                  {requiresTicker && (
+          {assets.length === 0 ? (
+            <Text color="text.secondary" textAlign="center" py={4}>
+              No assets in this category. Click "Add" to create one.
+            </Text>
+          ) : (
+            <Table variant="simple" size="sm">
+              <Thead>
+                <Tr>
+                  <Th border="none" width="25%">Asset</Th>
+                  {requiresTicker && <Th border="none" width="12%">Ticker</Th>}
+                  {hasMarketCap && <Th border="none" width="13%" isNumeric>Market Cap</Th>}
+                  <Th border="none" width="15%" isNumeric>Value</Th>
+                  <Th border="none" width="30%">Notes</Th>
+                  <Th border="none" width="5%"></Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {assets.map((asset) => (
+                  <Tr key={asset.id} _hover={{ bg: 'background.tertiary' }}>
                     <Td border="none">
-                      {asset.ticker ? (
-                        <Badge colorScheme="blue" variant="subtle">
-                          {asset.ticker}
-                        </Badge>
-                      ) : (
-                        <Text color="text.tertiary" fontSize="xs">-</Text>
-                      )}
-                    </Td>
-                  )}
-                  {hasMarketCap && (
-                    <Td border="none" isNumeric>
-                      <Text color="text.secondary" fontSize="xs">
-                        {asset.marketCap ? `$${(asset.marketCap / 1000000000).toFixed(1)}B` : '-'}
+                      <Text color="text.primary" fontWeight="medium">
+                        {asset.name}
                       </Text>
                     </Td>
-                  )}
-                  <Td border="none" isNumeric>
-                    <Text
-                      color={asset.currentValue ? "text.primary" : "text.tertiary"}
-                      fontWeight={asset.currentValue ? "medium" : "normal"}
-                    >
-                      {asset.currentValue ? formatCurrency(asset.currentValue) : 'Not set'}
-                    </Text>
-                  </Td>
-                  <Td border="none">
-                    <Text color="text.secondary" fontSize="xs" noOfLines={1}>
-                      {asset.notes || '-'}
-                    </Text>
-                  </Td>
-                  <Td border="none">
-                    <HStack spacing={1}>
-                      <IconButton
-                        aria-label="Edit"
-                        icon={<FiEdit2 />}
-                        size="xs"
-                        variant="ghost"
-                        color="blue.400"
-                        onClick={() => handleEdit(asset)}
-                      />
-                      <IconButton
-                        aria-label="Delete"
-                        icon={<FiTrash2 />}
-                        size="xs"
-                        variant="ghost"
-                        color="red.400"
-                        onClick={() => onDelete(asset.id)}
-                      />
-                    </HStack>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+                    {requiresTicker && (
+                      <Td border="none">
+                        {asset.ticker ? (
+                          <Badge colorScheme="blue" variant="subtle">
+                            {asset.ticker}
+                          </Badge>
+                        ) : (
+                          <Text color="text.tertiary" fontSize="xs">-</Text>
+                        )}
+                      </Td>
+                    )}
+                    {hasMarketCap && (
+                      <Td border="none" isNumeric>
+                        <Text color="text.secondary" fontSize="xs">
+                          {asset.marketCap ? `$${(asset.marketCap / 1000000000).toFixed(1)}B` : '-'}
+                        </Text>
+                      </Td>
+                    )}
+                    <Td border="none" isNumeric>
+                      <Text
+                        color={asset.currentValue ? "text.primary" : "text.tertiary"}
+                        fontWeight={asset.currentValue ? "medium" : "normal"}
+                      >
+                        {asset.currentValue ? formatCurrency(asset.currentValue) : 'Not set'}
+                      </Text>
+                    </Td>
+                    <Td border="none">
+                      <Text color="text.secondary" fontSize="xs" noOfLines={1}>
+                        {asset.notes || '-'}
+                      </Text>
+                    </Td>
+                    <Td border="none">
+                      <HStack spacing={1}>
+                        <IconButton
+                          aria-label="Edit"
+                          icon={<FiEdit2 />}
+                          size="xs"
+                          variant="ghost"
+                          color="blue.400"
+                          onClick={() => handleEdit(asset)}
+                        />
+                        <IconButton
+                          aria-label="Delete"
+                          icon={<FiTrash2 />}
+                          size="xs"
+                          variant="ghost"
+                          color="red.400"
+                          onClick={() => onDelete(asset.id)}
+                        />
+                      </HStack>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          )}
         </Box>
       </Collapse>
 
@@ -272,16 +320,7 @@ export default function SimplifiedAssetForm({
               {hasMarketCap && (
                 <FormControl>
                   <FormLabel color="text.secondary">Market Cap (Billions $)</FormLabel>
-                  <Input 
-                    type="number" 
-                    value={editMarketCap} 
-                    onChange={(e) => setEditMarketCap(e.target.value)} 
-                    placeholder="e.g., 3000 for $3T"
-                    step="0.1"
-                    bg="background.tertiary" 
-                    color="text.primary" 
-                    border="none" 
-                  />
+                  <Input type="number" value={editMarketCap} onChange={(e) => setEditMarketCap(e.target.value)} placeholder="e.g., 3000 for $3T" step="0.1" bg="background.tertiary" color="text.primary" border="none" />
                 </FormControl>
               )}
 
@@ -304,7 +343,7 @@ export default function SimplifiedAssetForm({
         </ModalContent>
       </Modal>
 
-      {/* Add Modal */}
+      {/* Add Modal - NOW WITH VALUE FIELD */}
       <Modal isOpen={isAddOpen} onClose={onAddClose}>
         <ModalOverlay />
         <ModalContent bg="background.secondary" border="none">
@@ -312,7 +351,7 @@ export default function SimplifiedAssetForm({
           <ModalCloseButton />
           <ModalBody pb={6}>
             <VStack spacing={4}>
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel color="text.secondary">Asset Name</FormLabel>
                 <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Enter asset name" bg="background.tertiary" color="text.primary" border="none" />
               </FormControl>
@@ -327,22 +366,30 @@ export default function SimplifiedAssetForm({
               {hasMarketCap && (
                 <FormControl>
                   <FormLabel color="text.secondary">Market Cap (Billions $)</FormLabel>
-                  <Input 
-                    type="number" 
-                    value={newMarketCap} 
-                    onChange={(e) => setNewMarketCap(e.target.value)} 
-                    placeholder="e.g., 3000 for $3T"
-                    step="0.1"
-                    bg="background.tertiary" 
-                    color="text.primary" 
-                    border="none" 
-                  />
+                  <Input type="number" value={newMarketCap} onChange={(e) => setNewMarketCap(e.target.value)} placeholder="e.g., 3000 for $3T" step="0.1" bg="background.tertiary" color="text.primary" border="none" />
+                </FormControl>
+              )}
+
+              <FormControl>
+                <FormLabel color="text.secondary">Current Value (€) - Optional</FormLabel>
+                <Input type="number" value={newValue} onChange={(e) => setNewValue(e.target.value)} placeholder="Enter current value" step="0.01" bg="background.tertiary" color="text.primary" border="none" />
+                <Text fontSize="xs" color="text.tertiary" mt={1}>
+                  Add value now or edit later
+                </Text>
+              </FormControl>
+
+              {newValue && (
+                <FormControl>
+                  <FormLabel color="text.secondary">Notes (optional)</FormLabel>
+                  <Input value={newNotes} onChange={(e) => setNewNotes(e.target.value)} placeholder="Add notes" bg="background.tertiary" color="text.primary" border="none" />
                 </FormControl>
               )}
 
               <HStack spacing={3} w="full" justify="flex-end">
                 <Button variant="ghost" onClick={onAddClose}>Cancel</Button>
-                <Button colorScheme="blue" onClick={handleAdd} isDisabled={!newName}>Add Asset</Button>
+                <Button colorScheme="blue" onClick={handleAdd} isDisabled={!newName} isLoading={isAddingWithValue}>
+                  {newValue ? 'Add with Value' : 'Add Asset'}
+                </Button>
               </HStack>
             </VStack>
           </ModalBody>

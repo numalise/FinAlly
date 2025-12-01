@@ -11,7 +11,7 @@ variable "environment" {
 variable "callback_urls" {
   description = "List of allowed callback URLs for OAuth"
   type        = list(string)
-  default     = ["http://localhost:3000/auth/callback"]
+  default     = ["http://localhost:3000/login"]
 }
 
 variable "logout_urls" {
