@@ -40,8 +40,6 @@ export default function TopBar() {
       right="0"
       h="64px"
       bg="background.secondary"
-      borderBottom="1px solid"
-      borderColor="whiteAlpha.100"
       display={{ base: 'block', lg: 'none' }}
       zIndex="sticky"
     >

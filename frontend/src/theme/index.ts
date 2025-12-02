@@ -60,8 +60,6 @@ const components = {
       container: {
         bg: 'background.secondary',
         borderRadius: 'lg',
-        border: '1px solid',
-        borderColor: 'whiteAlpha.100',
       },
     },
   },
@@ -90,15 +88,13 @@ const components = {
       filled: {
         field: {
           bg: 'background.tertiary',
-          border: '1px solid',
-          borderColor: 'whiteAlpha.100',
           _hover: {
             bg: 'background.tertiary',
-            borderColor: 'whiteAlpha.200',
           },
           _focus: {
             bg: 'background.tertiary',
             borderColor: 'brand.500',
+            boxShadow: `0 0 0 1px var(--chakra-colors-brand-500)`,
           },
         },
       },
@@ -111,7 +107,7 @@ const components = {
     variants: {
       simple: {
         th: {
-          borderColor: 'whiteAlpha.100',
+          border: 'none',
           color: 'text.secondary',
           textTransform: 'uppercase',
           fontSize: 'xs',
@@ -119,7 +115,7 @@ const components = {
           letterSpacing: 'wider',
         },
         td: {
-          borderColor: 'whiteAlpha.100',
+          border: 'none',
         },
       },
     },

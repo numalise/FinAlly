@@ -244,9 +244,6 @@ export default function CategoryAssetForm({
                   step="0.01"
                   bg="background.tertiary"
                   color="text.primary"
-                  borderColor="whiteAlpha.200"
-                  _hover={{ borderColor: 'whiteAlpha.300' }}
-                  _focus={{ borderColor: 'brand.500' }}
                 />
               </FormControl>
 
@@ -259,9 +256,6 @@ export default function CategoryAssetForm({
                   rows={3}
                   bg="background.tertiary"
                   color="text.primary"
-                  borderColor="whiteAlpha.200"
-                  _hover={{ borderColor: 'whiteAlpha.300' }}
-                  _focus={{ borderColor: 'brand.500' }}
                 />
               </FormControl>
 
@@ -301,9 +295,6 @@ export default function CategoryAssetForm({
                   placeholder="Enter asset name"
                   bg="background.tertiary"
                   color="text.primary"
-                  borderColor="whiteAlpha.200"
-                  _hover={{ borderColor: 'whiteAlpha.300' }}
-                  _focus={{ borderColor: 'brand.500' }}
                 />
               </FormControl>
 
@@ -316,9 +307,6 @@ export default function CategoryAssetForm({
                     placeholder="e.g., AAPL"
                     bg="background.tertiary"
                     color="text.primary"
-                    borderColor="whiteAlpha.200"
-                    _hover={{ borderColor: 'whiteAlpha.300' }}
-                    _focus={{ borderColor: 'brand.500' }}
                   />
                 </FormControl>
               )}
@@ -359,9 +347,6 @@ export default function CategoryAssetForm({
                   placeholder="Enter asset name"
                   bg="background.tertiary"
                   color="text.primary"
-                  borderColor="whiteAlpha.200"
-                  _hover={{ borderColor: 'whiteAlpha.300' }}
-                  _focus={{ borderColor: 'brand.500' }}
                 />
               </FormControl>
 
@@ -374,9 +359,6 @@ export default function CategoryAssetForm({
                     placeholder="e.g., AAPL"
                     bg="background.tertiary"
                     color="text.primary"
-                    borderColor="whiteAlpha.200"
-                    _hover={{ borderColor: 'whiteAlpha.300' }}
-                    _focus={{ borderColor: 'brand.500' }}
                   />
                 </FormControl>
               )}

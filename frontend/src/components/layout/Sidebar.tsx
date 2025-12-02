@@ -24,8 +24,6 @@ export default function Sidebar() {
       h="100vh"
       w="260px"
       bg="background.secondary"
-      borderRight="1px solid"
-      borderColor="whiteAlpha.100"
       display={{ base: 'none', lg: 'block' }}
     >
       <VStack h="full" justify="space-between" align="stretch" py={6} px={4}>
