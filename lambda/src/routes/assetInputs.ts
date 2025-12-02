@@ -20,7 +20,7 @@ export async function handleAssetInputs(
       const month = parseInt(queryParams.month || '');
 
       if (!year || !month) {
-        return errorResponse('year and month are required', 400);
+        return errorResponse('VALIDATION_ERROR', 'year and month are required', 400);
       }
 
       const assetInputs = await prisma.assetInput.findMany({
@@ -46,7 +46,7 @@ export async function handleAssetInputs(
       });
 
       if (!asset) {
-        return errorResponse('Asset not found', 404);
+        return errorResponse('NOT_FOUND', 'Asset not found', 404);
       }
 
       const assetInput = await prisma.assetInput.upsert({
@@ -78,9 +78,9 @@ export async function handleAssetInputs(
       return successResponse(assetInput);
     }
 
-    return errorResponse('Route not found', 404);
+    return errorResponse('ROUTE_NOT_FOUND', 'Route not found', 404);
   } catch (error) {
     console.error('Asset inputs route error:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Internal error', 500);
+    return errorResponse('INTERNAL_ERROR', error instanceof Error ? error.message : 'Internal error', 500);
   }
 }

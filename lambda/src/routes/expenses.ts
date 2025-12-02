@@ -20,7 +20,7 @@ export async function handleExpenses(
       const month = parseInt(queryParams.month || '');
 
       if (!year || !month) {
-        return errorResponse('year and month are required', 400);
+        return errorResponse('VALIDATION_ERROR', 'year and month are required', 400);
       }
 
       const expenses = await prisma.expenseItem.findMany({
@@ -61,16 +61,16 @@ export async function handleExpenses(
       });
 
       if (!existing) {
-        return errorResponse('Expense entry not found', 404);
+        return errorResponse('NOT_FOUND', 'Expense entry not found', 404);
       }
 
       await prisma.expenseItem.delete({ where: { id: expenseId } });
       return successResponse(null, 204);
     }
 
-    return errorResponse('Route not found', 404);
+    return errorResponse('ROUTE_NOT_FOUND', 'Route not found', 404);
   } catch (error) {
     console.error('Expenses route error:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Internal error', 500);
+    return errorResponse('INTERNAL_ERROR', error instanceof Error ? error.message : 'Internal error', 500);
   }
 }

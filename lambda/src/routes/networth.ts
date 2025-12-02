@@ -94,9 +94,9 @@ export async function handleNetworth(
       return successResponse(projection);
     }
 
-    return errorResponse('Route not found', 404);
+    return errorResponse('ROUTE_NOT_FOUND', 'Route not found', 404);
   } catch (error) {
     console.error('Networth route error:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Internal error', 500);
+    return errorResponse('INTERNAL_ERROR', error instanceof Error ? error.message : 'Internal error', 500);
   }
 }

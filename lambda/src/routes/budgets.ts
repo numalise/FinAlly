@@ -20,7 +20,7 @@ export async function handleBudgets(
       const month = parseInt(queryParams.month || '');
 
       if (!year || !month) {
-        return errorResponse('year and month are required', 400);
+        return errorResponse('VALIDATION_ERROR', 'year and month are required', 400);
       }
 
       const budgets = await prisma.budget.findMany({
@@ -81,9 +81,9 @@ export async function handleBudgets(
       return successResponse(budget);
     }
 
-    return errorResponse('Route not found', 404);
+    return errorResponse('ROUTE_NOT_FOUND', 'Route not found', 404);
   } catch (error) {
     console.error('Budgets route error:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Internal error', 500);
+    return errorResponse('INTERNAL_ERROR', error instanceof Error ? error.message : 'Internal error', 500);
   }
 }

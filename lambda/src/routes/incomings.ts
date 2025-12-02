@@ -20,7 +20,7 @@ export async function handleIncomings(
       const month = parseInt(queryParams.month || '');
 
       if (!year || !month) {
-        return errorResponse('year and month are required', 400);
+        return errorResponse('VALIDATION_ERROR', 'year and month are required', 400);
       }
 
       const incomings = await prisma.incomingItem.findMany({
@@ -61,16 +61,16 @@ export async function handleIncomings(
       });
 
       if (!existing) {
-        return errorResponse('Income entry not found', 404);
+        return errorResponse('NOT_FOUND', 'Income entry not found', 404);
       }
 
       await prisma.incomingItem.delete({ where: { id: incomingId } });
       return successResponse(null, 204);
     }
 
-    return errorResponse('Route not found', 404);
+    return errorResponse('ROUTE_NOT_FOUND', 'Route not found', 404);
   } catch (error) {
     console.error('Incomings route error:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Internal error', 500);
+    return errorResponse('INTERNAL_ERROR', error instanceof Error ? error.message : 'Internal error', 500);
   }
 }

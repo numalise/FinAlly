@@ -128,6 +128,12 @@ export async function handleAllocation(
       const body = JSON.parse(event.body || '{}');
       const { target_pct } = body;
 
+      console.log('PATCH category target:', { categoryId, target_pct, userId });
+
+      if (!target_pct || isNaN(parseFloat(target_pct))) {
+        return errorResponse('VALIDATION_ERROR', 'target_pct must be a valid number', 400);
+      }
+
       const target = await prisma.categoryAllocationTarget.upsert({
         where: {
           userId_categoryId: {
@@ -146,12 +152,13 @@ export async function handleAllocation(
         include: { category: true },
       });
 
+      console.log('Target updated successfully:', target);
       return successResponse(target);
     }
 
-    return errorResponse('Route not found', 404);
+    return errorResponse('ROUTE_NOT_FOUND', 'Route not found', 404);
   } catch (error) {
     console.error('Allocation route error:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Internal error', 500);
+    return errorResponse('INTERNAL_ERROR', error instanceof Error ? error.message : 'Internal error', 500);
   }
 }

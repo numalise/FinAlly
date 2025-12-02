@@ -54,7 +54,7 @@ export async function handleAssets(
       });
 
       if (!existing) {
-        return errorResponse('Asset not found', 404);
+        return errorResponse('NOT_FOUND', 'Asset not found', 404);
       }
 
       const updateData: any = {};
@@ -80,7 +80,7 @@ export async function handleAssets(
       });
 
       if (!existing) {
-        return errorResponse('Asset not found', 404);
+        return errorResponse('NOT_FOUND', 'Asset not found', 404);
       }
 
       await prisma.asset.delete({ where: { id: assetId } });
@@ -88,9 +88,9 @@ export async function handleAssets(
     }
 
     console.log('No route matched in handleAssets');
-    return errorResponse('Route not found', 404);
+    return errorResponse('ROUTE_NOT_FOUND', 'Route not found', 404);
   } catch (error) {
     console.error('Assets route error:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Internal error', 500);
+    return errorResponse('INTERNAL_ERROR', error instanceof Error ? error.message : 'Internal error', 500);
   }
 }
