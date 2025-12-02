@@ -101,7 +101,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
   const DeltaIcon = isOverAllocated ? FiMinus : FiPlus;
 
   const handleEditTarget = () => {
-    setEditTargetPct(category.targetPercentage.toString());
+    setEditTargetPct((category?.targetPercentage || 0).toString());
     onEditTargetOpen();
   };
 

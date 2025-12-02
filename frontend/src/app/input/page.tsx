@@ -14,19 +14,21 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
-  Divider,
   useToast,
   Spinner,
   Center,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
 } from '@chakra-ui/react';
 import MainLayout from '@/components/layout/MainLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import MonthSelector from '@/components/input/MonthSelector';
 import CategoryAssetForm from '@/components/input/CategoryAssetForm';
-import CashFlowInputSection from '@/components/input/CashFlowInputSection';
 import { formatCurrency } from '@/utils/formatters';
 import { useAssetManagement } from '@/hooks/useAssetManagement';
-import { useCashFlowManagement } from '@/hooks/useCashFlowManagement';
 
 export default function InputPage() {
   const toast = useToast();
@@ -34,9 +36,8 @@ export default function InputPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
 
-  // Use centralized hooks
+  // Use centralized asset management hook
   const assetManagement = useAssetManagement(year, month);
-  const cashFlowManagement = useCashFlowManagement(year, month);
 
   if (assetManagement.isLoading) {
     return (
@@ -87,42 +88,6 @@ export default function InputPage() {
     }
   };
 
-  // Cash flow handlers with toast notifications
-  const handleSaveIncome = async (categoryId: string, amount: number, description?: string) => {
-    try {
-      await cashFlowManagement.handleSaveIncome(categoryId, amount, description);
-      toast({ title: 'Income added', status: 'success', duration: 2000 });
-    } catch (error) {
-      toast({ title: 'Failed to add income', status: 'error', duration: 3000 });
-    }
-  };
-
-  const handleSaveExpense = async (categoryId: string, amount: number, description?: string) => {
-    try {
-      await cashFlowManagement.handleSaveExpense(categoryId, amount, description);
-      toast({ title: 'Expense added', status: 'success', duration: 2000 });
-    } catch (error) {
-      toast({ title: 'Failed to add expense', status: 'error', duration: 3000 });
-    }
-  };
-
-  const handleDeleteIncome = async (id: string) => {
-    try {
-      await cashFlowManagement.handleDeleteIncome(id);
-      toast({ title: 'Income deleted', status: 'success', duration: 2000 });
-    } catch (error) {
-      toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
-    }
-  };
-
-  const handleDeleteExpense = async (id: string) => {
-    try {
-      await cashFlowManagement.handleDeleteExpense(id);
-      toast({ title: 'Expense deleted', status: 'success', duration: 2000 });
-    } catch (error) {
-      toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
-    }
-  };
 
   return (
     <ProtectedRoute>
@@ -131,12 +96,12 @@ export default function InputPage() {
           <HStack justify="space-between" align="start">
             <Box>
               <Heading size="lg" color="text.primary" mb={2}>Monthly Input</Heading>
-              <Text color="text.secondary">Enter asset values, income, and expenses for the selected month</Text>
+              <Text color="text.secondary">Enter your asset values for the selected month</Text>
             </Box>
             <MonthSelector year={year} month={month} onChange={(y, m) => { setYear(y); setMonth(m); }} />
           </HStack>
 
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
             <Card>
               <CardBody>
                 <Stat>
@@ -154,40 +119,26 @@ export default function InputPage() {
             <Card>
               <CardBody>
                 <Stat>
-                  <StatLabel color="text.secondary">Total Income</StatLabel>
-                  <StatNumber color="success.500" fontSize="xl">
-                    {formatCurrency(cashFlowManagement.totalIncome)}
-                  </StatNumber>
-                  <StatHelpText color="text.secondary">
-                    {cashFlowManagement.incomings.length} entries
-                  </StatHelpText>
-                </Stat>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <Stat>
-                  <StatLabel color="text.secondary">Total Expenses</StatLabel>
-                  <StatNumber color="error.500" fontSize="xl">
-                    {formatCurrency(cashFlowManagement.totalExpenses)}
-                  </StatNumber>
-                  <StatHelpText color="text.secondary">
-                    {cashFlowManagement.expenses.length} entries
-                  </StatHelpText>
-                </Stat>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody>
-                <Stat>
-                  <StatLabel color="text.secondary">Savings Rate</StatLabel>
+                  <StatLabel color="text.secondary">Completion Rate</StatLabel>
                   <StatNumber color="brand.500" fontSize="xl">
-                    {cashFlowManagement.savingsRate.toFixed(1)}%
+                    {assetManagement.completionRate.toFixed(0)}%
                   </StatNumber>
                   <StatHelpText color="text.secondary">
-                    Net: {formatCurrency(cashFlowManagement.netSavings)}
+                    Assets with values
+                  </StatHelpText>
+                </Stat>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Stat>
+                  <StatLabel color="text.secondary">Categories</StatLabel>
+                  <StatNumber color="text.primary" fontSize="xl">
+                    {assetManagement.categoryMetadata.length}
+                  </StatNumber>
+                  <StatHelpText color="text.secondary">
+                    Asset categories
                   </StatHelpText>
                 </Stat>
               </CardBody>
@@ -195,43 +146,66 @@ export default function InputPage() {
           </SimpleGrid>
 
           <Box>
-            <Heading size="md" mb={4} color="text.primary">Asset Values</Heading>
-            <VStack spacing={6} align="stretch">
-              {assetManagement.categoryMetadata.map(({ code, name, requiresTicker }) => (
-                <Card key={code}>
-                  <CardBody>
-                    <CategoryAssetForm
-                      categoryCode={code}
-                      categoryName={name}
-                      assets={assetManagement.assetsByCategory[code]}
-                      onSave={handleSaveAsset}
-                      onEditAsset={handleEditAsset}
-                      onAdd={handleAddAsset}
-                      onDelete={handleDeleteAsset}
-                      requiresTicker={requiresTicker}
-                    />
-                  </CardBody>
-                </Card>
-              ))}
-            </VStack>
+            <Heading size="md" mb={4} color="text.primary">Asset Categories</Heading>
+            <Text fontSize="sm" color="text.secondary" mb={4}>
+              Click on a category to expand and manage your assets
+            </Text>
+
+            <Accordion allowMultiple>
+              {assetManagement.categoryMetadata.map(({ code, name, requiresTicker }) => {
+                const categoryAssets = assetManagement.assetsByCategory[code];
+                const categoryTotal = categoryAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0);
+                const hasAssets = categoryAssets.length > 0;
+
+                return (
+                  <AccordionItem key={code} border="none" mb={2}>
+                    <Card>
+                      <AccordionButton
+                        _hover={{ bg: 'background.tertiary' }}
+                        borderRadius="lg"
+                        py={4}
+                      >
+                        <Box flex="1" textAlign="left">
+                          <HStack justify="space-between">
+                            <VStack align="start" spacing={0}>
+                              <Text fontSize="lg" fontWeight="bold" color="text.primary">
+                                {name}
+                              </Text>
+                              <Text fontSize="sm" color="text.secondary">
+                                {categoryAssets.length} asset{categoryAssets.length !== 1 ? 's' : ''}
+                              </Text>
+                            </VStack>
+                            <VStack align="end" spacing={0}>
+                              <Text fontSize="md" fontWeight="bold" color={hasAssets ? 'brand.500' : 'text.secondary'}>
+                                {formatCurrency(categoryTotal)}
+                              </Text>
+                              <Text fontSize="xs" color="text.tertiary">
+                                Total value
+                              </Text>
+                            </VStack>
+                          </HStack>
+                        </Box>
+                        <AccordionIcon color="text.secondary" ml={4} />
+                      </AccordionButton>
+
+                      <AccordionPanel pb={4}>
+                        <CategoryAssetForm
+                          categoryCode={code}
+                          categoryName={name}
+                          assets={categoryAssets}
+                          onSave={handleSaveAsset}
+                          onEditAsset={handleEditAsset}
+                          onAdd={handleAddAsset}
+                          onDelete={handleDeleteAsset}
+                          requiresTicker={requiresTicker}
+                        />
+                      </AccordionPanel>
+                    </Card>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           </Box>
-
-          <Divider />
-
-          <Card>
-            <CardBody>
-              <CashFlowInputSection
-                year={year}
-                month={month}
-                incomeItems={cashFlowManagement.incomings}
-                expenseItems={cashFlowManagement.expenses}
-                onSaveIncome={handleSaveIncome}
-                onSaveExpense={handleSaveExpense}
-                onDeleteIncome={handleDeleteIncome}
-                onDeleteExpense={handleDeleteExpense}
-              />
-            </CardBody>
-          </Card>
         </VStack>
       </MainLayout>
     </ProtectedRoute>

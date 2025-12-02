@@ -46,9 +46,9 @@ interface CategoryAssetFormProps {
   categoryName: string;
   assets: Asset[];
   onSave: (assetId: string, value: number, notes?: string) => void;
-  onAdd: (category: string, name: string, ticker?: string) => void;
+  onAdd: (category: string, name: string, ticker?: string, marketCap?: number) => void;
   onDelete: (assetId: string) => void;
-  onEditAsset: (assetId: string, name: string, ticker?: string) => void;
+  onEditAsset: (assetId: string, name: string, ticker?: string, marketCap?: number) => void;
   requiresTicker?: boolean;
 }
 
@@ -73,9 +73,10 @@ export default function CategoryAssetForm({
   const [editingAssetDetails, setEditingAssetDetails] = useState<Asset | null>(null);
   const [editAssetName, setEditAssetName] = useState('');
   const [editAssetTicker, setEditAssetTicker] = useState('');
-  
+
   const [newName, setNewName] = useState('');
   const [newTicker, setNewTicker] = useState('');
+  const [newMarketCap, setNewMarketCap] = useState('');
 
   const handleEditValue = (asset: Asset) => {
     setEditingAsset(asset);
@@ -113,10 +114,12 @@ export default function CategoryAssetForm({
 
   const handleAdd = () => {
     if (newName) {
-      onAdd(categoryCode, newName, newTicker || undefined);
+      const marketCap = newMarketCap ? parseFloat(newMarketCap) : undefined;
+      onAdd(categoryCode, newName, newTicker || undefined, marketCap);
       onAddClose();
       setNewName('');
       setNewTicker('');
+      setNewMarketCap('');
     }
   };
 

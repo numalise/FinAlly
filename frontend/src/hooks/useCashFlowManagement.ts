@@ -33,13 +33,19 @@ export function useCashFlowManagement(year: number, month: number) {
   const deleteIncoming = useDeleteIncoming();
   const deleteExpense = useDeleteExpense();
 
-  // Parse raw data
+  // Parse raw data and ensure amounts are numbers
   const incomings: CashFlowItem[] = useMemo(
-    () => incomingsData?.data || [],
+    () => (incomingsData?.data || []).map((item: any) => ({
+      ...item,
+      amount: typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount,
+    })),
     [incomingsData]
   );
   const expenses: CashFlowItem[] = useMemo(
-    () => expensesData?.data || [],
+    () => (expensesData?.data || []).map((item: any) => ({
+      ...item,
+      amount: typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount,
+    })),
     [expensesData]
   );
 
