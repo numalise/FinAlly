@@ -63,8 +63,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(idToken);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Sign out from Amplify
+      const { signOut } = await import('aws-amplify/auth');
+      await signOut();
+    } catch (error) {
+      console.error('Amplify signout error:', error);
+    }
+
+    // Clear local storage
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('idToken');
+    localStorage.removeItem('refreshToken');
     setToken(null);
     router.push('/login');
   };

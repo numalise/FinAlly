@@ -23,7 +23,21 @@ export async function handleAssets(
         orderBy: [{ categoryId: 'asc' }, { assetName: 'asc' }],
       });
       console.log('Found assets:', assets.length);
-      return successResponse(assets);
+
+      // Transform to match frontend expectations (snake_case)
+      const transformedAssets = assets.map(asset => ({
+        id: asset.id,
+        asset_name: asset.assetName,
+        ticker: asset.ticker,
+        category_id: asset.categoryId,
+        market_cap: asset.marketCap,
+        category: {
+          code: asset.category.code,
+          category_name: asset.category.name,
+        },
+      }));
+
+      return successResponse(transformedAssets);
     }
 
     // POST /assets - Create new asset
@@ -40,7 +54,21 @@ export async function handleAssets(
         },
         include: { category: true },
       });
-      return successResponse(asset, 201);
+
+      // Transform to match frontend expectations (snake_case)
+      const transformedAsset = {
+        id: asset.id,
+        asset_name: asset.assetName,
+        ticker: asset.ticker,
+        category_id: asset.categoryId,
+        market_cap: asset.marketCap,
+        category: {
+          code: asset.category.code,
+          category_name: asset.category.name,
+        },
+      };
+
+      return successResponse(transformedAsset, 201);
     }
 
     // PATCH /assets/:id - Update asset
@@ -68,10 +96,33 @@ export async function handleAssets(
         include: { category: true },
       });
 
-      return successResponse(asset);
+      // Transform to match frontend expectations (snake_case)
+      const transformedAsset = {
+        id: asset.id,
+        asset_name: asset.assetName,
+        ticker: asset.ticker,
+        category_id: asset.categoryId,
+        market_cap: asset.marketCap,
+        category: {
+          code: asset.category.code,
+          category_name: asset.category.name,
+        },
+      };
+
+      return successResponse(transformedAsset);
     }
 
-    // DELETE /assets/:id
+    // DELETE /assets/all - Delete all user assets and related data
+    if (method === 'DELETE' && pathParts.length === 2 && pathParts[1] === 'all') {
+      console.log('Deleting all assets for user:', userId);
+      const result = await prisma.asset.deleteMany({
+        where: { userId },
+      });
+      console.log(`Deleted ${result.count} assets and related data`);
+      return successResponse({ deleted: result.count }, 200);
+    }
+
+    // DELETE /assets/:id - Delete specific asset
     if (method === 'DELETE' && pathParts.length === 2) {
       const assetId = pathParts[1];
 
@@ -89,8 +140,17 @@ export async function handleAssets(
 
     console.log('No route matched in handleAssets');
     return errorResponse('ROUTE_NOT_FOUND', 'Route not found', 404);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Assets route error:', error);
+
+    // Handle Prisma unique constraint violation (duplicate asset name)
+    if (error.code === 'P2002') {
+      const fields = error.meta?.target || [];
+      if (fields.includes('asset_name')) {
+        return errorResponse('DUPLICATE_ASSET', 'An asset with this name already exists', 409);
+      }
+    }
+
     return errorResponse('INTERNAL_ERROR', error instanceof Error ? error.message : 'Internal error', 500);
   }
 }

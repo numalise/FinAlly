@@ -89,27 +89,34 @@ export async function handleAllocation(
 
       const result = Object.values(categories).map(cat => {
         const target = targets.find(t => t.categoryId === cat.category);
-        const targetPct = target ? parseFloat(String(target.targetPct)) : 0;
-        const targetValue = (targetPct / 100) * currentTotal;
+        // targetPct is stored as decimal (0-1), convert to percentage (0-100)
+        const targetPctDecimal = target ? parseFloat(String(target.targetPct)) : 0;
+        const targetPct = targetPctDecimal * 100;
+        const targetValue = targetPctDecimal * currentTotal;
         const currentPct = currentTotal > 0 ? (cat.currentValue / currentTotal) * 100 : 0;
         const previousPct = previousTotal > 0 ? (cat.previousValue / previousTotal) * 100 : 0;
 
+        // Transform to snake_case for frontend
         return {
-          ...cat,
-          currentPercentage: currentPct,
-          previousPercentage: previousPct,
-          targetPercentage: targetPct,
-          targetValue,
+          category: cat.category,
+          category_name: cat.categoryName,
+          current_value: cat.currentValue,
+          previous_value: cat.previousValue,
+          current_percentage: currentPct,
+          previous_percentage: previousPct,
+          target_percentage: targetPct,
+          target_value: targetValue,
           delta: cat.currentValue - targetValue,
-          deltaPercentage: currentPct - targetPct,
+          delta_percentage: currentPct - targetPct,
+          assets: cat.assets,
         };
       });
 
       return successResponse({
         categories: result,
-        totalValue: currentTotal,
-        previousTotalValue: previousTotal,
-        totalChange: currentTotal - previousTotal,
+        total_value: currentTotal,
+        previous_total_value: previousTotal,
+        total_change: currentTotal - previousTotal,
       });
     }
 
@@ -134,6 +141,9 @@ export async function handleAllocation(
         return errorResponse('VALIDATION_ERROR', 'target_pct must be a valid number', 400);
       }
 
+      // Convert percentage (0-100) to decimal (0-1) for database storage
+      const targetPctDecimal = parseFloat(target_pct) / 100;
+
       const target = await prisma.categoryAllocationTarget.upsert({
         where: {
           userId_categoryId: {
@@ -142,12 +152,12 @@ export async function handleAllocation(
           },
         },
         update: {
-          targetPct: String(target_pct),
+          targetPct: String(targetPctDecimal),
         },
         create: {
           userId,
           categoryId,
-          targetPct: String(target_pct),
+          targetPct: String(targetPctDecimal),
         },
         include: { category: true },
       });

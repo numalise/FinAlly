@@ -22,22 +22,45 @@ import {
   AccordionButton,
   AccordionPanel,
   AccordionIcon,
+  Button,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from '@chakra-ui/react';
+import { FiTrash2 } from 'react-icons/fi';
+import { useRef } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import MonthSelector from '@/components/input/MonthSelector';
 import CategoryAssetForm from '@/components/input/CategoryAssetForm';
 import { formatCurrency } from '@/utils/formatters';
 import { useAssetManagement } from '@/hooks/useAssetManagement';
+import { useDeleteAllAssets } from '@/hooks/api/useAssets';
 
 export default function InputPage() {
   const toast = useToast();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
+  const { isOpen: isDeleteAllOpen, onOpen: onDeleteAllOpen, onClose: onDeleteAllClose } = useDisclosure();
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   // Use centralized asset management hook
   const assetManagement = useAssetManagement(year, month);
+
+  // Delete all assets mutation
+  const deleteAllAssets = useDeleteAllAssets();
 
   if (assetManagement.isLoading) {
     return (
@@ -88,6 +111,26 @@ export default function InputPage() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    try {
+      await deleteAllAssets.mutateAsync();
+      toast({
+        title: 'All assets deleted',
+        description: 'All your assets and related data have been removed',
+        status: 'success',
+        duration: 3000
+      });
+      onDeleteAllClose();
+    } catch (error) {
+      toast({
+        title: 'Failed to delete all assets',
+        description: 'Please try again',
+        status: 'error',
+        duration: 3000
+      });
+    }
+  };
+
 
   return (
     <ProtectedRoute>
@@ -98,7 +141,20 @@ export default function InputPage() {
               <Heading size="lg" color="text.primary" mb={2}>Monthly Input</Heading>
               <Text color="text.secondary">Enter your asset values for the selected month</Text>
             </Box>
-            <MonthSelector year={year} month={month} onChange={(y, m) => { setYear(y); setMonth(m); }} />
+            <HStack spacing={3}>
+              {assetManagement.totalAssets > 0 && (
+                <Button
+                  leftIcon={<FiTrash2 />}
+                  colorScheme="red"
+                  variant="outline"
+                  size="sm"
+                  onClick={onDeleteAllOpen}
+                >
+                  Delete All Assets
+                </Button>
+              )}
+              <MonthSelector year={year} month={month} onChange={(y, m) => { setYear(y); setMonth(m); }} />
+            </HStack>
           </HStack>
 
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
@@ -206,6 +262,41 @@ export default function InputPage() {
               })}
             </Accordion>
           </Box>
+
+          {/* Delete All Confirmation Dialog */}
+          <AlertDialog
+            isOpen={isDeleteAllOpen}
+            leastDestructiveRef={cancelRef}
+            onClose={onDeleteAllClose}
+          >
+            <AlertDialogOverlay>
+              <AlertDialogContent bg="background.secondary">
+                <AlertDialogHeader fontSize="lg" fontWeight="bold" color="text.primary">
+                  Delete All Assets
+                </AlertDialogHeader>
+
+                <AlertDialogBody color="text.secondary">
+                  Are you sure you want to delete all {assetManagement.totalAssets} assets?
+                  This will permanently remove all assets and their historical input data.
+                  This action cannot be undone.
+                </AlertDialogBody>
+
+                <AlertDialogFooter>
+                  <Button ref={cancelRef} onClick={onDeleteAllClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    colorScheme="red"
+                    onClick={handleDeleteAll}
+                    ml={3}
+                    isLoading={deleteAllAssets.isPending}
+                  >
+                    Delete All
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialogOverlay>
+          </AlertDialog>
         </VStack>
       </MainLayout>
     </ProtectedRoute>

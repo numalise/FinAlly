@@ -13,33 +13,52 @@ export function useAssets() {
 
 export function useCreateAsset() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: api.createAsset,
     onSuccess: () => {
+      // Invalidate and refetch assets to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.refetchQueries({ queryKey: ['assets'] });
     },
   });
 }
 
 export function useUpdateAsset() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => api.updateAsset(id, data),
     onSuccess: () => {
+      // Invalidate and refetch assets to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.refetchQueries({ queryKey: ['assets'] });
     },
   });
 }
 
 export function useDeleteAsset() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: api.deleteAsset,
     onSuccess: () => {
+      // Invalidate and refetch assets to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.refetchQueries({ queryKey: ['assets'] });
+    },
+  });
+}
+
+export function useDeleteAllAssets() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.deleteAllAssets,
+    onSuccess: () => {
+      // Invalidate and refetch assets to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.refetchQueries({ queryKey: ['assets'] });
     },
   });
 }

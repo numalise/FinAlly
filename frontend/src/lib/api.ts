@@ -17,6 +17,32 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle 401 errors (expired token)
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        try {
+          // Sign out from Amplify to clear stale session
+          const { signOut } = await import('aws-amplify/auth');
+          await signOut();
+        } catch (signOutError) {
+          console.error('Error signing out from Amplify:', signOutError);
+        }
+
+        // Token expired - clear storage and redirect to login
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('idToken');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login?expired=true';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const api = {
   // Health & Users
   health: () => apiClient.get('/health'),
@@ -32,6 +58,7 @@ export const api = {
   updateAsset: (id: string, data: { name?: string; ticker?: string; market_cap?: number }) =>
     apiClient.patch(`/assets/${id}`, data),
   deleteAsset: (id: string) => apiClient.delete(`/assets/${id}`),
+  deleteAllAssets: () => apiClient.delete('/assets/all'),
 
   // Asset Inputs
   getAssetInputs: (year: number, month: number) =>

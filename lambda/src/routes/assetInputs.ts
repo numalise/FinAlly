@@ -32,7 +32,19 @@ export async function handleAssetInputs(
         },
       });
 
-      return successResponse(assetInputs);
+      // Transform to match frontend expectations (snake_case)
+      const transformedInputs = assetInputs.map(input => ({
+        id: input.id,
+        asset_id: input.assetId,
+        year: input.year,
+        month: input.month,
+        total: parseFloat(String(input.total)),
+        notes: input.notes,
+        created_at: input.createdAt,
+        updated_at: input.updatedAt,
+      }));
+
+      return successResponse(transformedInputs);
     }
 
     // POST /asset-inputs - Create or update
@@ -75,7 +87,19 @@ export async function handleAssetInputs(
         },
       });
 
-      return successResponse(assetInput);
+      // Transform to match frontend expectations (snake_case)
+      const transformedInput = {
+        id: assetInput.id,
+        asset_id: assetInput.assetId,
+        year: assetInput.year,
+        month: assetInput.month,
+        total: parseFloat(String(assetInput.total)),
+        notes: assetInput.notes,
+        created_at: assetInput.createdAt,
+        updated_at: assetInput.updatedAt,
+      };
+
+      return successResponse(transformedInput);
     }
 
     return errorResponse('ROUTE_NOT_FOUND', 'Route not found', 404);

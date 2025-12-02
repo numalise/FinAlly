@@ -40,9 +40,14 @@ export function mergeAssetsWithInputs(
   assets: RawAsset[] = [],
   inputs: AssetInput[] = []
 ): TransformedAsset[] {
+  console.log('[mergeAssetsWithInputs] Assets:', assets.length, 'Inputs:', inputs.length);
+  if (inputs.length > 0) {
+    console.log('[mergeAssetsWithInputs] First input:', inputs[0]);
+  }
+
   return assets.map((asset) => {
     const input = inputs.find((inp) => inp.asset_id === asset.id);
-    return {
+    const result = {
       id: asset.id,
       name: asset.asset_name,
       ticker: asset.ticker,
@@ -52,6 +57,12 @@ export function mergeAssetsWithInputs(
       notes: input?.notes,
       marketCap: asset.market_cap ? parseFloat(String(asset.market_cap)) : undefined,
     };
+
+    if (input) {
+      console.log(`[mergeAssetsWithInputs] Matched ${asset.asset_name}: value=${input.total}`);
+    }
+
+    return result;
   });
 }
 

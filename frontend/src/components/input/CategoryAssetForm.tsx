@@ -39,16 +39,17 @@ interface Asset {
   categoryName: string;
   currentValue?: number;
   notes?: string;
+  marketCap?: number;
 }
 
 interface CategoryAssetFormProps {
   categoryCode: string;
   categoryName: string;
   assets: Asset[];
-  onSave: (assetId: string, value: number, notes?: string) => void;
-  onAdd: (category: string, name: string, ticker?: string, marketCap?: number) => void;
-  onDelete: (assetId: string) => void;
-  onEditAsset: (assetId: string, name: string, ticker?: string, marketCap?: number) => void;
+  onSave: (assetId: string, value: number, notes?: string) => Promise<void>;
+  onAdd: (category: string, name: string, ticker?: string, marketCap?: number) => Promise<any>;
+  onDelete: (assetId: string) => Promise<void>;
+  onEditAsset: (assetId: string, name: string, ticker?: string, marketCap?: number) => Promise<void>;
   requiresTicker?: boolean;
 }
 
@@ -64,62 +65,85 @@ export default function CategoryAssetForm({
 }: CategoryAssetFormProps) {
   const { isOpen: isEditOpen, onOpen: onEditOpen, onClose: onEditClose } = useDisclosure();
   const { isOpen: isAddOpen, onOpen: onAddOpen, onClose: onAddClose } = useDisclosure();
-  const { isOpen: isEditAssetOpen, onOpen: onEditAssetOpen, onClose: onEditAssetClose } = useDisclosure();
-  
+
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const [editNotes, setEditNotes] = useState('');
-  
-  const [editingAssetDetails, setEditingAssetDetails] = useState<Asset | null>(null);
-  const [editAssetName, setEditAssetName] = useState('');
-  const [editAssetTicker, setEditAssetTicker] = useState('');
+  const [editMode, setEditMode] = useState<'add' | 'edit'>('add');
 
-  const [newName, setNewName] = useState('');
-  const [newTicker, setNewTicker] = useState('');
-  const [newMarketCap, setNewMarketCap] = useState('');
+  // Form fields for both add and edit
+  const [formName, setFormName] = useState('');
+  const [formTicker, setFormTicker] = useState('');
+  const [formMarketCap, setFormMarketCap] = useState('');
+  const [formValue, setFormValue] = useState('');
+  const [formNotes, setFormNotes] = useState('');
 
-  const handleEditValue = (asset: Asset) => {
-    setEditingAsset(asset);
-    setEditValue(asset.currentValue?.toString() || '');
-    setEditNotes(asset.notes || '');
+  const handleOpenAdd = () => {
+    setEditMode('add');
+    setEditingAsset(null);
+    setFormName('');
+    setFormTicker('');
+    setFormMarketCap('');
+    setFormValue('');
+    setFormNotes('');
     onEditOpen();
   };
 
-  const handleEditAssetDetails = (asset: Asset) => {
-    setEditingAssetDetails(asset);
-    setEditAssetName(asset.name);
-    setEditAssetTicker(asset.ticker || '');
-    onEditAssetOpen();
+  const handleOpenEdit = (asset: Asset) => {
+    setEditMode('edit');
+    setEditingAsset(asset);
+    setFormName(asset.name);
+    setFormTicker(asset.ticker || '');
+    setFormMarketCap(asset.marketCap?.toString() || '');
+    setFormValue(asset.currentValue?.toString() || '');
+    setFormNotes(asset.notes || '');
+    onEditOpen();
   };
 
-  const handleSaveEdit = () => {
-    if (editingAsset && editValue) {
-      onSave(editingAsset.id, parseFloat(editValue), editNotes);
+  const handleSave = async () => {
+    if (editMode === 'add') {
+      // Create new asset with all required fields
+      const marketCap = formMarketCap ? parseFloat(formMarketCap) : undefined;
+      console.log('[CategoryAssetForm] Creating asset:', { categoryCode, formName, formTicker, marketCap });
+      const result = await onAdd(categoryCode, formName, formTicker || undefined, marketCap);
+      console.log('[CategoryAssetForm] Asset created, result:', result);
+
+      // Save initial value if provided
+      if (result && formValue) {
+        console.log('[CategoryAssetForm] Checking for created asset ID in result.data:', result.data);
+        // The result should contain the created asset's data
+        const createdAsset = result.data?.data;
+        console.log('[CategoryAssetForm] Created asset:', createdAsset);
+        if (createdAsset?.id) {
+          console.log('[CategoryAssetForm] Saving initial value:', parseFloat(formValue), 'for asset:', createdAsset.id);
+          await onSave(createdAsset.id, parseFloat(formValue), formNotes);
+        } else {
+          console.warn('[CategoryAssetForm] No asset ID found in result, cannot save initial value');
+        }
+      } else {
+        console.log('[CategoryAssetForm] No initial value to save or no result:', { result, formValue });
+      }
+    } else if (editMode === 'edit' && editingAsset) {
+      // Update asset details
+      const marketCap = formMarketCap ? parseFloat(formMarketCap) : undefined;
+      await onEditAsset(editingAsset.id, formName, formTicker || undefined, marketCap);
+
+      // Update value if changed
+      if (formValue) {
+        await onSave(editingAsset.id, parseFloat(formValue), formNotes);
+      }
+    }
+
+    onEditClose();
+    setFormName('');
+    setFormTicker('');
+    setFormMarketCap('');
+    setFormValue('');
+    setFormNotes('');
+  };
+
+  const handleDelete = async () => {
+    if (editingAsset) {
+      await onDelete(editingAsset.id);
       onEditClose();
-      setEditingAsset(null);
-      setEditValue('');
-      setEditNotes('');
-    }
-  };
-
-  const handleSaveAssetDetails = () => {
-    if (editingAssetDetails && editAssetName) {
-      onEditAsset(editingAssetDetails.id, editAssetName, editAssetTicker || undefined);
-      onEditAssetClose();
-      setEditingAssetDetails(null);
-      setEditAssetName('');
-      setEditAssetTicker('');
-    }
-  };
-
-  const handleAdd = () => {
-    if (newName) {
-      const marketCap = newMarketCap ? parseFloat(newMarketCap) : undefined;
-      onAdd(categoryCode, newName, newTicker || undefined, marketCap);
-      onAddClose();
-      setNewName('');
-      setNewTicker('');
-      setNewMarketCap('');
     }
   };
 
@@ -141,7 +165,7 @@ export default function CategoryAssetForm({
           size="sm"
           colorScheme="blue"
           variant="ghost"
-          onClick={onAddOpen}
+          onClick={handleOpenAdd}
         >
           Add Asset
         </Button>
@@ -151,23 +175,24 @@ export default function CategoryAssetForm({
         <Table variant="simple" size="sm">
           <Thead>
             <Tr>
-              <Th width="25%">Asset Name</Th>
-              {requiresTicker && <Th width="15%">Ticker</Th>}
-              <Th width="20%" isNumeric>Value</Th>
-              <Th width="25%">Notes</Th>
-              <Th width="15%">Actions</Th>
+              <Th>Asset Name</Th>
+              {requiresTicker && <Th>Ticker</Th>}
+              {requiresTicker && <Th isNumeric>Market Cap</Th>}
+              <Th isNumeric>Current Value</Th>
+              <Th>Notes</Th>
+              <Th width="80px">Actions</Th>
             </Tr>
           </Thead>
           <Tbody>
             {assets.map((asset) => (
-              <Tr key={asset.id}>
-                <Td width="25%">
+              <Tr key={asset.id} _hover={{ bg: 'whiteAlpha.50' }}>
+                <Td>
                   <Text color="text.primary" fontWeight="medium">
                     {asset.name}
                   </Text>
                 </Td>
                 {requiresTicker && (
-                  <Td width="15%">
+                  <Td>
                     {asset.ticker ? (
                       <Badge colorScheme="blue" variant="subtle">
                         {asset.ticker}
@@ -177,46 +202,36 @@ export default function CategoryAssetForm({
                     )}
                   </Td>
                 )}
-                <Td width="20%" isNumeric>
-                  <Text 
-                    color={asset.currentValue ? "text.primary" : "text.tertiary"} 
-                    fontWeight={asset.currentValue ? "medium" : "normal"}
+                {requiresTicker && (
+                  <Td isNumeric>
+                    <Text color="text.secondary" fontSize="sm">
+                      {asset.marketCap ? formatCurrency(asset.marketCap) : '-'}
+                    </Text>
+                  </Td>
+                )}
+                <Td isNumeric>
+                  <Text
+                    color={asset.currentValue ? "brand.500" : "text.tertiary"}
+                    fontWeight={asset.currentValue ? "semibold" : "normal"}
+                    fontSize="md"
                   >
                     {asset.currentValue ? formatCurrency(asset.currentValue) : 'Not set'}
                   </Text>
                 </Td>
-                <Td width="25%">
-                  <Text color="text.secondary" fontSize="xs" noOfLines={1}>
+                <Td>
+                  <Text color="text.secondary" fontSize="xs" noOfLines={1} maxW="200px">
                     {asset.notes || '-'}
                   </Text>
                 </Td>
-                <Td width="15%">
-                  <HStack spacing={1}>
-                    <IconButton
-                      aria-label="Edit details"
-                      icon={<FiEdit2 />}
-                      size="sm"
-                      variant="ghost"
-                      color="blue.400"
-                      onClick={() => handleEditAssetDetails(asset)}
-                    />
-                    <IconButton
-                      aria-label="Edit value"
-                      icon={<FiSave />}
-                      size="sm"
-                      variant="ghost"
-                      color="green.400"
-                      onClick={() => handleEditValue(asset)}
-                    />
-                    <IconButton
-                      aria-label="Delete"
-                      icon={<FiTrash2 />}
-                      size="sm"
-                      variant="ghost"
-                      color="red.400"
-                      onClick={() => onDelete(asset.id)}
-                    />
-                  </HStack>
+                <Td>
+                  <IconButton
+                    aria-label="Edit asset"
+                    icon={<FiEdit2 />}
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="blue"
+                    onClick={() => handleOpenEdit(asset)}
+                  />
                 </Td>
               </Tr>
             ))}
@@ -224,23 +239,63 @@ export default function CategoryAssetForm({
         </Table>
       </Box>
 
-      {/* Edit Value Modal */}
-      <Modal isOpen={isEditOpen} onClose={onEditClose}>
+      {/* Unified Add/Edit Modal */}
+      <Modal isOpen={isEditOpen} onClose={onEditClose} size="lg">
         <ModalOverlay />
         <ModalContent bg="background.secondary">
           <ModalHeader color="text.primary">
-            Edit Value: {editingAsset?.name}
+            {editMode === 'add' ? `Add Asset to ${categoryName}` : `Edit ${editingAsset?.name}`}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             <VStack spacing={4}>
-              <FormControl>
-                <FormLabel color="text.secondary">Value (€)</FormLabel>
+              <FormControl isRequired>
+                <FormLabel color="text.secondary">Asset Name</FormLabel>
+                <Input
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="Enter asset name"
+                  bg="background.tertiary"
+                  color="text.primary"
+                  autoFocus
+                />
+              </FormControl>
+
+              {requiresTicker && (
+                <FormControl isRequired={requiresTicker}>
+                  <FormLabel color="text.secondary">Ticker</FormLabel>
+                  <Input
+                    value={formTicker}
+                    onChange={(e) => setFormTicker(e.target.value.toUpperCase())}
+                    placeholder="e.g., AAPL"
+                    bg="background.tertiary"
+                    color="text.primary"
+                  />
+                </FormControl>
+              )}
+
+              {requiresTicker && (
+                <FormControl isRequired={requiresTicker}>
+                  <FormLabel color="text.secondary">Market Cap (€)</FormLabel>
+                  <Input
+                    type="number"
+                    value={formMarketCap}
+                    onChange={(e) => setFormMarketCap(e.target.value)}
+                    placeholder="Enter market cap"
+                    step="0.01"
+                    bg="background.tertiary"
+                    color="text.primary"
+                  />
+                </FormControl>
+              )}
+
+              <FormControl isRequired={editMode === 'add'}>
+                <FormLabel color="text.secondary">Current Value (€)</FormLabel>
                 <Input
                   type="number"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  placeholder="Enter value"
+                  value={formValue}
+                  onChange={(e) => setFormValue(e.target.value)}
+                  placeholder="Enter current value"
                   step="0.01"
                   bg="background.tertiary"
                   color="text.primary"
@@ -250,131 +305,46 @@ export default function CategoryAssetForm({
               <FormControl>
                 <FormLabel color="text.secondary">Notes (optional)</FormLabel>
                 <Textarea
-                  value={editNotes}
-                  onChange={(e) => setEditNotes(e.target.value)}
-                  placeholder="Add notes"
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
+                  placeholder="Add notes about this asset"
                   rows={3}
                   bg="background.tertiary"
                   color="text.primary"
                 />
               </FormControl>
 
-              <HStack spacing={3} w="full" justify="flex-end">
-                <Button variant="ghost" onClick={onEditClose}>
-                  Cancel
-                </Button>
-                <Button
-                  colorScheme="blue"
-                  leftIcon={<FiSave />}
-                  onClick={handleSaveEdit}
-                  isDisabled={!editValue}
-                >
-                  Save
-                </Button>
-              </HStack>
-            </VStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-
-      {/* Edit Asset Details Modal */}
-      <Modal isOpen={isEditAssetOpen} onClose={onEditAssetClose}>
-        <ModalOverlay />
-        <ModalContent bg="background.secondary">
-          <ModalHeader color="text.primary">
-            Edit Asset Details
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <VStack spacing={4}>
-              <FormControl>
-                <FormLabel color="text.secondary">Asset Name</FormLabel>
-                <Input
-                  value={editAssetName}
-                  onChange={(e) => setEditAssetName(e.target.value)}
-                  placeholder="Enter asset name"
-                  bg="background.tertiary"
-                  color="text.primary"
-                />
-              </FormControl>
-
-              {requiresTicker && (
-                <FormControl>
-                  <FormLabel color="text.secondary">Ticker (optional)</FormLabel>
-                  <Input
-                    value={editAssetTicker}
-                    onChange={(e) => setEditAssetTicker(e.target.value.toUpperCase())}
-                    placeholder="e.g., AAPL"
-                    bg="background.tertiary"
-                    color="text.primary"
-                  />
-                </FormControl>
-              )}
-
-              <HStack spacing={3} w="full" justify="flex-end">
-                <Button variant="ghost" onClick={onEditAssetClose}>
-                  Cancel
-                </Button>
-                <Button
-                  colorScheme="blue"
-                  leftIcon={<FiSave />}
-                  onClick={handleSaveAssetDetails}
-                  isDisabled={!editAssetName}
-                >
-                  Save
-                </Button>
-              </HStack>
-            </VStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-
-      {/* Add Asset Modal */}
-      <Modal isOpen={isAddOpen} onClose={onAddClose}>
-        <ModalOverlay />
-        <ModalContent bg="background.secondary">
-          <ModalHeader color="text.primary">
-            Add Asset to {categoryName}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <VStack spacing={4}>
-              <FormControl>
-                <FormLabel color="text.secondary">Asset Name</FormLabel>
-                <Input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Enter asset name"
-                  bg="background.tertiary"
-                  color="text.primary"
-                />
-              </FormControl>
-
-              {requiresTicker && (
-                <FormControl>
-                  <FormLabel color="text.secondary">Ticker (optional)</FormLabel>
-                  <Input
-                    value={newTicker}
-                    onChange={(e) => setNewTicker(e.target.value.toUpperCase())}
-                    placeholder="e.g., AAPL"
-                    bg="background.tertiary"
-                    color="text.primary"
-                  />
-                </FormControl>
-              )}
-
-              <HStack spacing={3} w="full" justify="flex-end">
-                <Button variant="ghost" onClick={onAddClose}>
-                  Cancel
-                </Button>
-                <Button
-                  colorScheme="blue"
-                  leftIcon={<FiPlus />}
-                  onClick={handleAdd}
-                  isDisabled={!newName}
-                >
-                  Add
-                </Button>
+              <HStack spacing={3} w="full" justify="space-between">
+                <HStack spacing={3}>
+                  {editMode === 'edit' && (
+                    <Button
+                      leftIcon={<FiTrash2 />}
+                      colorScheme="red"
+                      variant="ghost"
+                      onClick={handleDelete}
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </HStack>
+                <HStack spacing={3}>
+                  <Button variant="ghost" onClick={onEditClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    colorScheme="blue"
+                    leftIcon={editMode === 'add' ? <FiPlus /> : <FiSave />}
+                    onClick={handleSave}
+                    isDisabled={
+                      !formName ||
+                      (requiresTicker && !formTicker) ||
+                      (requiresTicker && !formMarketCap) ||
+                      (editMode === 'add' && !formValue)
+                    }
+                  >
+                    {editMode === 'add' ? 'Add Asset' : 'Save Changes'}
+                  </Button>
+                </HStack>
               </HStack>
             </VStack>
           </ModalBody>
