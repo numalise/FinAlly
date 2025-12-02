@@ -98,8 +98,8 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
             </Thead>
             <Tbody>
               {data.map((item, index) => {
-                const deltaValue = item.value - item.target;
-                const deltaPercent = item.percentage - item.targetPercentage;
+                const deltaValue = (item.value || 0) - (item.target || 0);
+                const deltaPercent = (item.percentage || 0) - (item.targetPercentage || 0);
                 const isOver = deltaValue > 0;
                 const isUnder = deltaValue < 0;
                 const isOnTarget = Math.abs(deltaPercent) < 1;
@@ -122,17 +122,17 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                     </Td>
                     <Td border="none" isNumeric>
                       <Text color="text.primary">
-                        {item.percentage.toFixed(1)}%
+                        {(item.percentage || 0).toFixed(1)}%
                       </Text>
                     </Td>
                     <Td border="none" isNumeric>
                       <Text color="text.secondary">
-                        {formatCurrency(item.target)}
+                        {formatCurrency(item.target || 0)}
                       </Text>
                     </Td>
                     <Td border="none" isNumeric>
                       <Text color="text.secondary">
-                        {item.targetPercentage.toFixed(1)}%
+                        {(item.targetPercentage || 0).toFixed(1)}%
                       </Text>
                     </Td>
                     <Td border="none" isNumeric>

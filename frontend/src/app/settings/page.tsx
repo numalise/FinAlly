@@ -13,9 +13,6 @@ import {
   Input,
   Button,
   HStack,
-  Switch,
-  Select,
-  Divider,
   useToast,
   Table,
   Thead,
@@ -23,342 +20,372 @@ import {
   Tr,
   Th,
   Td,
-  IconButton,
+  Spinner,
+  Center,
 } from '@chakra-ui/react';
-import { FiSave, FiEdit2, FiDownload } from 'react-icons/fi';
-import { useState } from 'react';
+import { FiSave, FiDownload } from 'react-icons/fi';
+import { useState, useEffect, useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
+import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { useUser, useUpdateUser } from '@/hooks/api/useUser';
+import { useCategoryTargets, useUpdateCategoryTarget } from '@/hooks/api/useAllocation';
+import { api } from '@/lib/api';
 
 export default function SettingsPage() {
   const toast = useToast();
-  
-  // User Profile
-  const [fullName, setFullName] = useState('Emanuele');
-  const [email, setEmail] = useState('emanuele@example.com');
-  
-  // Preferences
-  const [currency, setCurrency] = useState('EUR');
-  const [language, setLanguage] = useState('en');
-  const [darkMode, setDarkMode] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  
-  // Category Targets
-  const [targets, setTargets] = useState([
-    { category: 'SINGLE_STOCKS', name: 'Single Stocks', target: 20 },
-    { category: 'ETF_STOCKS', name: 'ETF Stocks', target: 25 },
-    { category: 'ETF_BONDS', name: 'ETF Bonds', target: 10 },
-    { category: 'CRYPTO', name: 'Crypto', target: 10 },
-    { category: 'PRIVATE_EQUITY', name: 'Private Equity', target: 5 },
-    { category: 'BUSINESS_PROFITS', name: 'Business Profits', target: 5 },
-    { category: 'REAL_ESTATE', name: 'Real Estate', target: 20 },
-    { category: 'CASH', name: 'Cash Liquidity', target: 5 },
-  ]);
 
-  const handleSaveProfile = () => {
-    console.log('Save profile:', { fullName, email });
-    toast({
-      title: 'Profile updated',
-      description: 'Your profile information has been saved.',
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
-    // TODO: API call to PATCH /users/me
-  };
+  // Fetch user data
+  const { data: userData, isLoading: userLoading } = useUser();
+  const updateUserMutation = useUpdateUser();
 
-  const handleSavePreferences = () => {
-    console.log('Save preferences:', { currency, language, darkMode, emailNotifications });
-    toast({
-      title: 'Preferences updated',
-      description: 'Your preferences have been saved.',
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
-    // TODO: API call to PATCH /users/me/preferences
+  // Fetch category targets
+  const { data: targetsData, isLoading: targetsLoading } = useCategoryTargets();
+  const updateTarget = useUpdateCategoryTarget();
+
+  // User Profile State
+  const [fullName, setFullName] = useState('');
+  const [displayName, setDisplayName] = useState('');
+
+  // Category Targets State
+  const [targets, setTargets] = useState<
+    Array<{ category: string; name: string; target: number }>
+  >([]);
+
+  // Populate form when data loads
+  useEffect(() => {
+    if (userData?.data) {
+      setFullName(userData.data.full_name || '');
+      setDisplayName(userData.data.displayName || '');
+    }
+  }, [userData]);
+
+  useEffect(() => {
+    if (targetsData?.data) {
+      const categoryNames: Record<string, string> = {
+        SINGLE_STOCKS: 'Single Stocks',
+        ETF_STOCKS: 'ETF Stocks',
+        ETF_BONDS: 'ETF Bonds',
+        CRYPTO: 'Crypto',
+        PRIVATE_EQUITY: 'Private Equity',
+        BUSINESS_PROFITS: 'Business Profits',
+        REAL_ESTATE: 'Real Estate',
+        CASH: 'Cash Liquidity',
+      };
+
+      const formattedTargets = targetsData.data.map((t: any) => ({
+        category: t.category,
+        name: categoryNames[t.category] || t.category,
+        target: t.target_pct,
+      }));
+      setTargets(formattedTargets);
+    }
+  }, [targetsData]);
+
+  const handleSaveProfile = async () => {
+    try {
+      await updateUserMutation.mutateAsync({
+        full_name: fullName,
+        displayName: displayName,
+      });
+      toast({
+        title: 'Profile updated',
+        description: 'Your profile information has been saved.',
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to update profile',
+        description: error.message || 'An error occurred',
+        status: 'error',
+        duration: 4000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleUpdateTarget = (category: string, value: number) => {
-    setTargets(prev => prev.map(t => 
-      t.category === category ? { ...t, target: value } : t
-    ));
+    setTargets((prev) =>
+      prev.map((t) => (t.category === category ? { ...t, target: value } : t))
+    );
   };
 
-  const handleSaveTargets = () => {
-    console.log('Save targets:', targets);
-    toast({
-      title: 'Allocation targets updated',
-      description: 'Your category targets have been saved.',
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
-    // TODO: API call to PATCH /category-allocation-targets
+  const handleSaveTargets = async () => {
+    try {
+      // Update all targets
+      await Promise.all(
+        targets.map((t) =>
+          updateTarget.mutateAsync({
+            category: t.category,
+            targetPct: t.target,
+          })
+        )
+      );
+      toast({
+        title: 'Allocation targets updated',
+        description: 'Your category targets have been saved.',
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to update targets',
+        description: error.message || 'An error occurred',
+        status: 'error',
+        duration: 4000,
+        isClosable: true,
+      });
+    }
   };
 
-  const handleExportData = () => {
-    console.log('Export data requested');
-    toast({
-      title: 'Export started',
-      description: 'Your data export will download shortly.',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
-    // TODO: API call to GET /export/data
+  const handleExportData = async () => {
+    try {
+      const response = await api.exportData();
+      const blob = new Blob([JSON.stringify(response.data, null, 2)], {
+        type: 'application/json',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `finally-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Export complete',
+        description: 'Your data has been downloaded.',
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Export failed',
+        description: error.message || 'An error occurred',
+        status: 'error',
+        duration: 4000,
+        isClosable: true,
+      });
+    }
   };
 
-  const totalTarget = targets.reduce((sum, t) => sum + t.target, 0);
-  const isValidTargets = totalTarget === 100;
+  const totalTarget = useMemo(
+    () => targets.reduce((sum, t) => sum + t.target, 0),
+    [targets]
+  );
+  const isValidTargets = Math.abs(totalTarget - 100) < 0.01; // Allow small floating point differences
+
+  if (userLoading || targetsLoading) {
+    return (
+      <ProtectedRoute>
+        <MainLayout>
+          <Center h="400px">
+            <Spinner size="xl" color="brand.500" />
+          </Center>
+        </MainLayout>
+      </ProtectedRoute>
+    );
+  }
 
   return (
-    <MainLayout>
-      <VStack spacing={8} align="stretch">
-        <Box>
-          <Heading size="lg" mb={2} color="text.primary">
-            Settings
-          </Heading>
-          <Text color="text.secondary">
-            Manage your account, preferences, and allocation targets
-          </Text>
-        </Box>
+    <ProtectedRoute>
+      <MainLayout>
+        <VStack spacing={8} align="stretch">
+          <Box>
+            <Heading size="lg" mb={2} color="text.primary">
+              Settings
+            </Heading>
+            <Text color="text.secondary">
+              Manage your account and allocation targets
+            </Text>
+          </Box>
 
-        {/* User Profile */}
-        <Card bg="background.secondary" border="none">
-          <CardBody>
-            <VStack spacing={6} align="stretch">
-              <Heading size="md" color="text.primary">
-                User Profile
-              </Heading>
-
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                <FormControl>
-                  <FormLabel color="text.secondary">Full Name</FormLabel>
-                  <Input
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    bg="background.tertiary"
-                    color="text.primary"
-                    border="none"
-                  />
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel color="text.secondary">Email</FormLabel>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    bg="background.tertiary"
-                    color="text.primary"
-                    border="none"
-                  />
-                </FormControl>
-              </SimpleGrid>
-
-              <HStack justify="flex-end">
-                <Button
-                  leftIcon={<FiSave />}
-                  colorScheme="blue"
-                  onClick={handleSaveProfile}
-                >
-                  Save Profile
-                </Button>
-              </HStack>
-            </VStack>
-          </CardBody>
-        </Card>
-
-        {/* Preferences */}
-        <Card bg="background.secondary" border="none">
-          <CardBody>
-            <VStack spacing={6} align="stretch">
-              <Heading size="md" color="text.primary">
-                Preferences
-              </Heading>
-
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                <FormControl>
-                  <FormLabel color="text.secondary">Currency</FormLabel>
-                  <Select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    bg="background.tertiary"
-                    color="text.primary"
-                    border="none"
-                  >
-                    <option value="EUR">EUR (€)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="GBP">GBP (£)</option>
-                  </Select>
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel color="text.secondary">Language</FormLabel>
-                  <Select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                    bg="background.tertiary"
-                    color="text.primary"
-                    border="none"
-                  >
-                    <option value="en">English</option>
-                    <option value="it">Italiano</option>
-                  </Select>
-                </FormControl>
-
-                <FormControl display="flex" alignItems="center">
-                  <FormLabel color="text.secondary" mb="0">
-                    Dark Mode
-                  </FormLabel>
-                  <Switch
-                    isChecked={darkMode}
-                    onChange={(e) => setDarkMode(e.target.checked)}
-                    colorScheme="blue"
-                  />
-                </FormControl>
-
-                <FormControl display="flex" alignItems="center">
-                  <FormLabel color="text.secondary" mb="0">
-                    Email Notifications
-                  </FormLabel>
-                  <Switch
-                    isChecked={emailNotifications}
-                    onChange={(e) => setEmailNotifications(e.target.checked)}
-                    colorScheme="blue"
-                  />
-                </FormControl>
-              </SimpleGrid>
-
-              <HStack justify="flex-end">
-                <Button
-                  leftIcon={<FiSave />}
-                  colorScheme="blue"
-                  onClick={handleSavePreferences}
-                >
-                  Save Preferences
-                </Button>
-              </HStack>
-            </VStack>
-          </CardBody>
-        </Card>
-
-        {/* Allocation Targets */}
-        <Card bg="background.secondary" border="none">
-          <CardBody>
-            <VStack spacing={6} align="stretch">
-              <HStack justify="space-between">
+          {/* User Profile */}
+          <Card bg="background.secondary" border="none">
+            <CardBody>
+              <VStack spacing={6} align="stretch">
                 <Heading size="md" color="text.primary">
-                  Category Allocation Targets
+                  User Profile
                 </Heading>
-                <Text 
-                  fontSize="sm" 
-                  color={isValidTargets ? 'success.500' : 'error.500'}
-                  fontWeight="bold"
-                >
-                  Total: {totalTarget}% {isValidTargets ? '✓' : '(must equal 100%)'}
-                </Text>
-              </HStack>
 
-              <Table variant="simple" size="sm">
-                <Thead>
-                  <Tr>
-                    <Th border="none">Category</Th>
-                    <Th border="none" isNumeric>Target %</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {targets.map((target) => (
-                    <Tr key={target.category}>
-                      <Td border="none">
-                        <Text color="text.primary" fontWeight="medium">
-                          {target.name}
-                        </Text>
-                      </Td>
-                      <Td border="none" isNumeric>
-                        <HStack justify="flex-end" spacing={2}>
-                          <Input
-                            type="number"
-                            value={target.target}
-                            onChange={(e) => handleUpdateTarget(target.category, parseFloat(e.target.value))}
-                            step="0.1"
-                            min="0"
-                            max="100"
-                            w="80px"
-                            size="sm"
-                            bg="background.tertiary"
-                            color="text.primary"
-                            border="none"
-                            textAlign="right"
-                          />
-                          <Text color="text.secondary">%</Text>
-                        </HStack>
-                      </Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                  <FormControl>
+                    <FormLabel color="text.secondary">Full Name</FormLabel>
+                    <Input
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      bg="background.tertiary"
+                      color="text.primary"
+                      border="none"
+                    />
+                  </FormControl>
 
-              <HStack justify="flex-end">
-                <Button
-                  leftIcon={<FiSave />}
-                  colorScheme="blue"
-                  onClick={handleSaveTargets}
-                  isDisabled={!isValidTargets}
-                >
-                  Save Targets
-                </Button>
-              </HStack>
-            </VStack>
-          </CardBody>
-        </Card>
+                  <FormControl>
+                    <FormLabel color="text.secondary">Display Name</FormLabel>
+                    <Input
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      bg="background.tertiary"
+                      color="text.primary"
+                      border="none"
+                    />
+                  </FormControl>
+                </SimpleGrid>
 
-        {/* Data Management */}
-        <Card bg="background.secondary" border="none">
-          <CardBody>
-            <VStack spacing={6} align="stretch">
-              <Heading size="md" color="text.primary">
-                Data Management
-              </Heading>
-
-              <VStack spacing={4} align="stretch">
-                <HStack justify="space-between" p={4} bg="background.tertiary" borderRadius="md">
-                  <Box>
-                    <Text color="text.primary" fontWeight="medium">
-                      Export Your Data
-                    </Text>
-                    <Text fontSize="sm" color="text.secondary">
-                      Download all your financial data as JSON
-                    </Text>
-                  </Box>
+                <HStack justify="flex-end">
                   <Button
-                    leftIcon={<FiDownload />}
+                    leftIcon={<FiSave />}
                     colorScheme="blue"
-                    variant="ghost"
-                    onClick={handleExportData}
+                    onClick={handleSaveProfile}
+                    isLoading={updateUserMutation.isPending}
                   >
-                    Export
+                    Save Profile
                   </Button>
                 </HStack>
+              </VStack>
+            </CardBody>
+          </Card>
 
-                <HStack justify="space-between" p={4} bg="background.tertiary" borderRadius="md">
-                  <Box>
-                    <Text color="text.primary" fontWeight="medium">
-                      API Access
-                    </Text>
-                    <Text fontSize="sm" color="text.secondary">
-                      Status: Connected to Lambda API
-                    </Text>
-                  </Box>
-                  <Text fontSize="sm" color="success.500" fontWeight="medium">
-                    Active
+          {/* Allocation Targets */}
+          <Card bg="background.secondary" border="none">
+            <CardBody>
+              <VStack spacing={6} align="stretch">
+                <HStack justify="space-between">
+                  <Heading size="md" color="text.primary">
+                    Category Allocation Targets
+                  </Heading>
+                  <Text
+                    fontSize="sm"
+                    color={isValidTargets ? 'success.500' : 'error.500'}
+                    fontWeight="bold"
+                  >
+                    Total: {totalTarget.toFixed(1)}%{' '}
+                    {isValidTargets ? '✓' : '(must equal 100%)'}
                   </Text>
                 </HStack>
+
+                <Table variant="simple" size="sm">
+                  <Thead>
+                    <Tr>
+                      <Th border="none">Category</Th>
+                      <Th border="none" isNumeric>
+                        Target %
+                      </Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {targets.map((target) => (
+                      <Tr key={target.category}>
+                        <Td border="none">
+                          <Text color="text.primary" fontWeight="medium">
+                            {target.name}
+                          </Text>
+                        </Td>
+                        <Td border="none" isNumeric>
+                          <HStack justify="flex-end" spacing={2}>
+                            <Input
+                              type="number"
+                              value={target.target}
+                              onChange={(e) =>
+                                handleUpdateTarget(
+                                  target.category,
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                              step="0.1"
+                              min="0"
+                              max="100"
+                              w="80px"
+                              size="sm"
+                              bg="background.tertiary"
+                              color="text.primary"
+                              border="none"
+                              textAlign="right"
+                            />
+                            <Text color="text.secondary">%</Text>
+                          </HStack>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+
+                <HStack justify="flex-end">
+                  <Button
+                    leftIcon={<FiSave />}
+                    colorScheme="blue"
+                    onClick={handleSaveTargets}
+                    isDisabled={!isValidTargets}
+                    isLoading={updateTarget.isPending}
+                  >
+                    Save Targets
+                  </Button>
+                </HStack>
               </VStack>
-            </VStack>
-          </CardBody>
-        </Card>
-      </VStack>
-    </MainLayout>
+            </CardBody>
+          </Card>
+
+          {/* Data Management */}
+          <Card bg="background.secondary" border="none">
+            <CardBody>
+              <VStack spacing={6} align="stretch">
+                <Heading size="md" color="text.primary">
+                  Data Management
+                </Heading>
+
+                <VStack spacing={4} align="stretch">
+                  <HStack
+                    justify="space-between"
+                    p={4}
+                    bg="background.tertiary"
+                    borderRadius="md"
+                  >
+                    <Box>
+                      <Text color="text.primary" fontWeight="medium">
+                        Export Your Data
+                      </Text>
+                      <Text fontSize="sm" color="text.secondary">
+                        Download all your financial data as JSON
+                      </Text>
+                    </Box>
+                    <Button
+                      leftIcon={<FiDownload />}
+                      colorScheme="blue"
+                      variant="ghost"
+                      onClick={handleExportData}
+                    >
+                      Export
+                    </Button>
+                  </HStack>
+
+                  <HStack
+                    justify="space-between"
+                    p={4}
+                    bg="background.tertiary"
+                    borderRadius="md"
+                  >
+                    <Box>
+                      <Text color="text.primary" fontWeight="medium">
+                        API Access
+                      </Text>
+                      <Text fontSize="sm" color="text.secondary">
+                        Status: Connected to Lambda API
+                      </Text>
+                    </Box>
+                    <Text fontSize="sm" color="success.500" fontWeight="medium">
+                      Active
+                    </Text>
+                  </HStack>
+                </VStack>
+              </VStack>
+            </CardBody>
+          </Card>
+        </VStack>
+      </MainLayout>
+    </ProtectedRoute>
   );
 }

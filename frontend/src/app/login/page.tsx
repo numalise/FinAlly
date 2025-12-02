@@ -1,13 +1,12 @@
 'use client';
 
 import { Box, Container, VStack, Heading, Button, Text, useToast } from '@chakra-ui/react';
-import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { setTokenFromCognito, token } = useAuth();
   const toast = useToast();
 
@@ -81,5 +80,13 @@ export default function LoginPage() {
         </VStack>
       </Container>
     </Box>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<Box minH="100vh" bg="background.primary" />}>
+      <LoginContent />
+    </Suspense>
   );
 }

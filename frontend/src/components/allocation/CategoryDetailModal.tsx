@@ -68,7 +68,9 @@ const CustomTooltip = ({ active, payload }: any) => {
           {formatCurrency(data.currentValue)}
         </Text>
         <Text fontSize="xs" color="text.secondary">
-          {((data.currentValue / data.totalCategoryValue) * 100).toFixed(1)}% of category
+          {data.totalCategoryValue > 0
+            ? (((data.currentValue || 0) / data.totalCategoryValue) * 100).toFixed(1)
+            : '0.0'}% of category
         </Text>
       </Box>
     );
@@ -131,7 +133,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                     Current Value
                   </Text>
                   <Text fontSize="2xl" fontWeight="bold" color="text.primary">
-                    {formatCurrency(category.currentValue)}
+                    {formatCurrency(category.currentValue || 0)}
                   </Text>
                 </Box>
                 <Box>
@@ -139,7 +141,7 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                     Current %
                   </Text>
                   <Text fontSize="2xl" fontWeight="bold" color="text.primary">
-                    {category.currentPercentage.toFixed(1)}%
+                    {(category.currentPercentage || 0).toFixed(1)}%
                   </Text>
                 </Box>
                 <Box>
@@ -158,10 +160,10 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                   </HStack>
                   <VStack align="start" spacing={0}>
                     <Text fontSize="2xl" fontWeight="bold" color="text.secondary">
-                      {category.targetPercentage.toFixed(1)}%
+                      {(category.targetPercentage || 0).toFixed(1)}%
                     </Text>
                     <Text fontSize="sm" color="text.secondary">
-                      {formatCurrency(category.targetValue)}
+                      {formatCurrency(category.targetValue || 0)}
                     </Text>
                   </VStack>
                 </Box>
@@ -234,16 +236,18 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                     </Thead>
                     <Tbody>
                       {category.assets.map((asset, index) => {
-                        const percentOfCategory = (asset.currentValue / totalCategoryValue) * 100;
-                        
+                        const percentOfCategory = totalCategoryValue > 0
+                          ? ((asset.currentValue || 0) / totalCategoryValue) * 100
+                          : 0;
+
                         let targetPct = 0;
                         let targetValue = 0;
                         let delta = 0;
-                        
+
                         if (category.hasMarketCapTargets && asset.marketCap && totalMarketCap > 0) {
                           targetPct = (asset.marketCap / totalMarketCap) * 100;
                           targetValue = (targetPct / 100) * totalCategoryValue;
-                          delta = asset.currentValue - targetValue;
+                          delta = (asset.currentValue || 0) - targetValue;
                         }
 
                         const assetIsOver = delta > 0;
@@ -272,25 +276,25 @@ export default function CategoryDetailModal({ isOpen, onClose, category, onUpdat
                             {category.hasMarketCapTargets && (
                               <Td border="none" isNumeric>
                                 <Text color="text.secondary" fontSize="xs">
-                                  {asset.marketCap ? `$${(asset.marketCap / 1000000000).toFixed(1)}B` : '-'}
+                                  {asset.marketCap ? `$${((asset.marketCap || 0) / 1000000000).toFixed(1)}B` : '-'}
                                 </Text>
                               </Td>
                             )}
                             <Td border="none" isNumeric>
                               <Text color="text.primary" fontWeight="medium">
-                                {formatCurrency(asset.currentValue)}
+                                {formatCurrency(asset.currentValue || 0)}
                               </Text>
                             </Td>
                             <Td border="none" isNumeric>
                               <Text color="text.primary" fontSize="sm">
-                                {percentOfCategory.toFixed(1)}%
+                                {(percentOfCategory || 0).toFixed(1)}%
                               </Text>
                             </Td>
                             {category.hasMarketCapTargets && (
                               <>
                                 <Td border="none" isNumeric>
                                   <Text color="text.secondary" fontSize="sm">
-                                    {targetPct > 0 ? `${targetPct.toFixed(1)}%` : '-'}
+                                    {targetPct > 0 ? `${(targetPct || 0).toFixed(1)}%` : '-'}
                                   </Text>
                                 </Td>
                                 <Td border="none" isNumeric>

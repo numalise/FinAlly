@@ -20,14 +20,16 @@ interface CategoryCardProps {
 }
 
 export default function CategoryCard({ category, onSelect }: CategoryCardProps) {
-  const valueChange = category.currentValue - category.previousValue;
+  const valueChange = (category.currentValue || 0) - (category.previousValue || 0);
   const isPositive = valueChange >= 0;
-  const targetDelta = category.deltaPercentage;
+  const targetDelta = category.deltaPercentage || 0;
   const isOnTarget = Math.abs(targetDelta) < 1;
 
-  const progressValue = (category.currentPercentage / category.targetPercentage) * 100;
-  const isOver = category.currentPercentage > category.targetPercentage;
-  const isUnder = category.currentPercentage < category.targetPercentage;
+  const progressValue = category.targetPercentage > 0
+    ? ((category.currentPercentage || 0) / category.targetPercentage) * 100
+    : 0;
+  const isOver = (category.currentPercentage || 0) > (category.targetPercentage || 0);
+  const isUnder = (category.currentPercentage || 0) < (category.targetPercentage || 0);
 
   return (
     <Card
@@ -69,7 +71,7 @@ export default function CategoryCard({ category, onSelect }: CategoryCardProps) 
           {/* Value Display */}
           <Box>
             <Text fontSize="2xl" fontWeight="bold" color="text.primary">
-              {formatCurrency(category.currentValue)}
+              {formatCurrency(category.currentValue || 0)}
             </Text>
             <HStack spacing={2} mt={1}>
               <HStack spacing={1} color={isPositive ? 'success.500' : 'error.500'}>
@@ -90,21 +92,21 @@ export default function CategoryCard({ category, onSelect }: CategoryCardProps) 
               <VStack align="start" spacing={0}>
                 <Text fontSize="xs" color="text.secondary">Current</Text>
                 <Text fontSize="sm" fontWeight="medium" color="text.primary">
-                  {category.currentPercentage.toFixed(1)}%
+                  {(category.currentPercentage || 0).toFixed(1)}%
                 </Text>
               </VStack>
               <VStack align="center" spacing={0}>
                 <Text fontSize="xs" color={isOnTarget ? 'text.secondary' : isOver ? 'orange.400' : 'blue.400'}>
-                  {targetDelta > 0 ? '+' : ''}{targetDelta.toFixed(1)}%
+                  {targetDelta > 0 ? '+' : ''}{(targetDelta || 0).toFixed(1)}%
                 </Text>
                 <Text fontSize="xs" color={isOnTarget ? 'text.tertiary' : isOver ? 'orange.400' : 'blue.400'}>
-                  {category.delta >= 0 ? '+' : ''}{formatCurrency(Math.abs(category.delta))}
+                  {(category.delta || 0) >= 0 ? '+' : ''}{formatCurrency(Math.abs(category.delta || 0))}
                 </Text>
               </VStack>
               <VStack align="end" spacing={0}>
                 <Text fontSize="xs" color="text.secondary">Target</Text>
                 <Text fontSize="sm" fontWeight="medium" color="text.secondary">
-                  {category.targetPercentage.toFixed(1)}%
+                  {(category.targetPercentage || 0).toFixed(1)}%
                 </Text>
               </VStack>
             </HStack>

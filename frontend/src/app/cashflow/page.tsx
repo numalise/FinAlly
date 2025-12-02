@@ -23,9 +23,8 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import MonthSelector from '@/components/input/MonthSelector';
 import CashFlowInputSection from '@/components/input/CashFlowInputSection';
 import { formatCurrency } from '@/utils/formatters';
-
-// ✅ Use REAL API hooks
-import { useIncomings, useExpenses, useCreateIncoming, useCreateExpense, useDeleteIncoming, useDeleteExpense } from '@/hooks/api/useCashFlow';
+import { useCashFlowManagement } from '@/hooks/useCashFlowManagement';
+import { useOptimisticMutation } from '@/hooks/useOptimisticMutation';
 
 export default function CashFlowPage() {
   const toast = useToast();
@@ -33,17 +32,57 @@ export default function CashFlowPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
 
-  // Fetch data
-  const { data: incomingsData, isLoading: incomingsLoading } = useIncomings(year, month);
-  const { data: expensesData, isLoading: expensesLoading } = useExpenses(year, month);
+  // Use centralized cash flow management hook
+  const {
+    incomings,
+    expenses,
+    totalIncome,
+    totalExpenses,
+    netSavings,
+    savingsRate,
+    isLoading,
+    handleSaveIncome,
+    handleSaveExpense,
+    handleDeleteIncome,
+    handleDeleteExpense,
+  } = useCashFlowManagement(year, month);
 
-  // Mutations
-  const createIncoming = useCreateIncoming();
-  const createExpense = useCreateExpense();
-  const deleteIncoming = useDeleteIncoming();
-  const deleteExpense = useDeleteExpense();
+  // Wrap handlers with toast notifications
+  const onSaveIncome = async (categoryId: string, amount: number, description?: string) => {
+    try {
+      await handleSaveIncome(categoryId, amount, description);
+      toast({ title: 'Income added', status: 'success', duration: 2000 });
+    } catch (error) {
+      toast({ title: 'Failed to add income', status: 'error', duration: 3000 });
+    }
+  };
 
-  const isLoading = incomingsLoading || expensesLoading;
+  const onSaveExpense = async (categoryId: string, amount: number, description?: string) => {
+    try {
+      await handleSaveExpense(categoryId, amount, description);
+      toast({ title: 'Expense added', status: 'success', duration: 2000 });
+    } catch (error) {
+      toast({ title: 'Failed to add expense', status: 'error', duration: 3000 });
+    }
+  };
+
+  const onDeleteIncome = async (id: string) => {
+    try {
+      await handleDeleteIncome(id);
+      toast({ title: 'Income deleted', status: 'success', duration: 2000 });
+    } catch (error) {
+      toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
+    }
+  };
+
+  const onDeleteExpense = async (id: string) => {
+    try {
+      await handleDeleteExpense(id);
+      toast({ title: 'Expense deleted', status: 'success', duration: 2000 });
+    } catch (error) {
+      toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -56,50 +95,6 @@ export default function CashFlowPage() {
       </ProtectedRoute>
     );
   }
-
-  const incomings = incomingsData?.data || [];
-  const expenses = expensesData?.data || [];
-
-  const totalIncome = incomings.reduce((sum: number, item: any) => sum + item.amount, 0);
-  const totalExpenses = expenses.reduce((sum: number, item: any) => sum + item.amount, 0);
-  const netSavings = totalIncome - totalExpenses;
-  const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
-
-  const handleSaveIncome = async (categoryId: string, amount: number, description?: string) => {
-    try {
-      await createIncoming.mutateAsync({ category_id: categoryId, year, month, amount, description });
-      toast({ title: 'Income added', status: 'success', duration: 2000 });
-    } catch (error) {
-      toast({ title: 'Failed to add income', status: 'error', duration: 3000 });
-    }
-  };
-
-  const handleSaveExpense = async (categoryId: string, amount: number, description?: string) => {
-    try {
-      await createExpense.mutateAsync({ category_id: categoryId, year, month, amount, description });
-      toast({ title: 'Expense added', status: 'success', duration: 2000 });
-    } catch (error) {
-      toast({ title: 'Failed to add expense', status: 'error', duration: 3000 });
-    }
-  };
-
-  const handleDeleteIncome = async (id: string) => {
-    try {
-      await deleteIncoming.mutateAsync(id);
-      toast({ title: 'Income deleted', status: 'success', duration: 2000 });
-    } catch (error) {
-      toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
-    }
-  };
-
-  const handleDeleteExpense = async (id: string) => {
-    try {
-      await deleteExpense.mutateAsync(id);
-      toast({ title: 'Expense deleted', status: 'success', duration: 2000 });
-    } catch (error) {
-      toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
-    }
-  };
 
   return (
     <ProtectedRoute>
@@ -182,10 +177,10 @@ export default function CashFlowPage() {
                 month={month}
                 incomeItems={incomings}
                 expenseItems={expenses}
-                onSaveIncome={handleSaveIncome}
-                onSaveExpense={handleSaveExpense}
-                onDeleteIncome={handleDeleteIncome}
-                onDeleteExpense={handleDeleteExpense}
+                onSaveIncome={onSaveIncome}
+                onSaveExpense={onSaveExpense}
+                onDeleteIncome={onDeleteIncome}
+                onDeleteExpense={onDeleteExpense}
               />
             </CardBody>
           </Card>

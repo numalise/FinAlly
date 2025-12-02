@@ -22,9 +22,9 @@ interface CashLiquiditySectionProps {
 }
 
 export default function CashLiquiditySection({ category }: CashLiquiditySectionProps) {
-  const isOver = category.delta > 0;
-  const isUnder = category.delta < 0;
-  const isOnTarget = Math.abs(category.deltaPercentage) < 1;
+  const isOver = (category.delta || 0) > 0;
+  const isUnder = (category.delta || 0) < 0;
+  const isOnTarget = Math.abs(category.deltaPercentage || 0) < 1;
 
   return (
     <Box>
@@ -38,20 +38,20 @@ export default function CashLiquiditySection({ category }: CashLiquiditySectionP
           <VStack align="start" spacing={1}>
             <Text fontSize="xs" color="text.secondary">Current Value</Text>
             <Text fontSize="2xl" fontWeight="bold" color="text.primary">
-              {formatCurrency(category.currentValue)}
+              {formatCurrency(category.currentValue || 0)}
             </Text>
             <Text fontSize="sm" color="text.secondary">
-              {category.currentPercentage.toFixed(1)}% of portfolio
+              {(category.currentPercentage || 0).toFixed(1)}% of portfolio
             </Text>
           </VStack>
 
           <VStack align="start" spacing={1}>
             <Text fontSize="xs" color="text.secondary">Target</Text>
             <Text fontSize="xl" fontWeight="bold" color="text.secondary">
-              {formatCurrency(category.targetValue)}
+              {formatCurrency(category.targetValue || 0)}
             </Text>
             <Text fontSize="sm" color="text.secondary">
-              {category.targetPercentage.toFixed(1)}% target
+              {(category.targetPercentage || 0).toFixed(1)}% target
             </Text>
           </VStack>
 
@@ -91,7 +91,9 @@ export default function CashLiquiditySection({ category }: CashLiquiditySectionP
             </Thead>
             <Tbody>
               {category.assets.map((asset) => {
-                const percentOfCategory = (asset.currentValue / category.currentValue) * 100;
+                const percentOfCategory = category.currentValue > 0
+                  ? ((asset.currentValue || 0) / category.currentValue) * 100
+                  : 0;
                 return (
                   <Tr key={asset.id}>
                     <Td border="none">
@@ -101,12 +103,12 @@ export default function CashLiquiditySection({ category }: CashLiquiditySectionP
                     </Td>
                     <Td border="none" isNumeric>
                       <Text color="text.primary" fontWeight="medium">
-                        {formatCurrency(asset.currentValue)}
+                        {formatCurrency(asset.currentValue || 0)}
                       </Text>
                     </Td>
                     <Td border="none" isNumeric>
                       <Text color="text.secondary">
-                        {percentOfCategory.toFixed(1)}%
+                        {(percentOfCategory || 0).toFixed(1)}%
                       </Text>
                     </Td>
                   </Tr>

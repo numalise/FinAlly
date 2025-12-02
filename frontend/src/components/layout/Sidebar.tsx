@@ -3,12 +3,12 @@
 import { Box, VStack, HStack, Text, Icon, Button } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { FiHome, FiPieChart, FiTrendingUp, FiDollarSign, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FiHome, FiPieChart, FiEdit3, FiDollarSign, FiSettings, FiLogOut } from 'react-icons/fi';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: FiHome },
   { name: 'Asset Allocation', href: '/allocation', icon: FiPieChart },
-  { name: 'Monthly Investments', href: '/investments', icon: FiTrendingUp },
+  { name: 'Monthly Input', href: '/input', icon: FiEdit3 },
   { name: 'Cash Flow', href: '/cashflow', icon: FiDollarSign },
   { name: 'Settings', href: '/settings', icon: FiSettings },
 ];

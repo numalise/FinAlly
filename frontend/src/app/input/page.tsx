@@ -25,11 +25,8 @@ import MonthSelector from '@/components/input/MonthSelector';
 import CategoryAssetForm from '@/components/input/CategoryAssetForm';
 import CashFlowInputSection from '@/components/input/CashFlowInputSection';
 import { formatCurrency } from '@/utils/formatters';
-
-// ✅ Use REAL API hooks
-import { useAssets, useCreateAsset, useUpdateAsset, useDeleteAsset } from '@/hooks/api/useAssets';
-import { useAssetInputs, useSaveAssetInput } from '@/hooks/api/useAssetInputs';
-import { useIncomings, useExpenses, useCreateIncoming, useCreateExpense, useDeleteIncoming, useDeleteExpense } from '@/hooks/api/useCashFlow';
+import { useAssetManagement } from '@/hooks/useAssetManagement';
+import { useCashFlowManagement } from '@/hooks/useCashFlowManagement';
 
 export default function InputPage() {
   const toast = useToast();
@@ -37,23 +34,11 @@ export default function InputPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
 
-  // Fetch data
-  const { data: assetsData, isLoading: assetsLoading } = useAssets();
-  const { data: assetInputsData } = useAssetInputs(year, month);
-  const { data: incomingsData } = useIncomings(year, month);
-  const { data: expensesData } = useExpenses(year, month);
+  // Use centralized hooks
+  const assetManagement = useAssetManagement(year, month);
+  const cashFlowManagement = useCashFlowManagement(year, month);
 
-  // Mutations
-  const createAsset = useCreateAsset();
-  const updateAsset = useUpdateAsset();
-  const deleteAsset = useDeleteAsset();
-  const saveAssetInput = useSaveAssetInput();
-  const createIncoming = useCreateIncoming();
-  const createExpense = useCreateExpense();
-  const deleteIncoming = useDeleteIncoming();
-  const deleteExpense = useDeleteExpense();
-
-  if (assetsLoading) {
+  if (assetManagement.isLoading) {
     return (
       <ProtectedRoute>
         <MainLayout>
@@ -65,49 +50,10 @@ export default function InputPage() {
     );
   }
 
-  // Parse API responses
-  const assets = assetsData?.data || [];
-  const assetInputs = assetInputsData?.data || [];
-  const incomings = incomingsData?.data || [];
-  const expenses = expensesData?.data || [];
-
-  // Merge assets with their current values from assetInputs
-  const assetsWithValues = assets.map((asset: any) => {
-    const input = assetInputs.find((inp: any) => inp.asset_id === asset.id);
-    return {
-      id: asset.id,
-      name: asset.asset_name,
-      ticker: asset.ticker,
-      category: asset.category_id,
-      categoryName: asset.category?.category_name || asset.category_id,
-      currentValue: input?.total,
-      notes: input?.notes,
-      marketCap: asset.market_cap ? parseFloat(asset.market_cap) : undefined,
-    };
-  });
-
-  const assetsByCategory = {
-    SINGLE_STOCKS: assetsWithValues.filter((a: any) => a.category === 'SINGLE_STOCKS'),
-    ETF_STOCKS: assetsWithValues.filter((a: any) => a.category === 'ETF_STOCKS'),
-    ETF_BONDS: assetsWithValues.filter((a: any) => a.category === 'ETF_BONDS'),
-    CRYPTO: assetsWithValues.filter((a: any) => a.category === 'CRYPTO'),
-    PRIVATE_EQUITY: assetsWithValues.filter((a: any) => a.category === 'PRIVATE_EQUITY'),
-    BUSINESS_PROFITS: assetsWithValues.filter((a: any) => a.category === 'BUSINESS_PROFITS'),
-    REAL_ESTATE: assetsWithValues.filter((a: any) => a.category === 'REAL_ESTATE'),
-    CASH: assetsWithValues.filter((a: any) => a.category === 'CASH'),
-  };
-
-  const totalAssetValue = assetsWithValues.reduce((sum: number, a: any) => sum + (a.currentValue || 0), 0);
-  const totalIncome = incomings.reduce((sum: number, item: any) => sum + item.amount, 0);
-  const totalExpenses = expenses.reduce((sum: number, item: any) => sum + item.amount, 0);
-  const netSavings = totalIncome - totalExpenses;
-  const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
-  const assetsWithValuesCount = assetsWithValues.filter((a: any) => a.currentValue !== undefined).length;
-
-  // Handlers
+  // Asset handlers with toast notifications
   const handleSaveAsset = async (assetId: string, value: number, notes?: string) => {
     try {
-      await saveAssetInput.mutateAsync({ asset_id: assetId, year, month, total: value, notes });
+      await assetManagement.handleSaveAsset(assetId, value, notes);
       toast({ title: 'Asset value saved', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to save', status: 'error', duration: 3000 });
@@ -116,7 +62,7 @@ export default function InputPage() {
 
   const handleEditAsset = async (assetId: string, name: string, ticker?: string, marketCap?: number) => {
     try {
-      await updateAsset.mutateAsync({ id: assetId, data: { name, ticker, market_cap: marketCap } });
+      await assetManagement.handleEditAsset(assetId, name, ticker, marketCap);
       toast({ title: 'Asset updated', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to update', status: 'error', duration: 3000 });
@@ -125,7 +71,7 @@ export default function InputPage() {
 
   const handleAddAsset = async (category: string, name: string, ticker?: string, marketCap?: number) => {
     try {
-      await createAsset.mutateAsync({ name, ticker, category_id: category, market_cap: marketCap });
+      await assetManagement.handleAddAsset(category, name, ticker, marketCap);
       toast({ title: 'Asset created', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to create', status: 'error', duration: 3000 });
@@ -134,16 +80,17 @@ export default function InputPage() {
 
   const handleDeleteAsset = async (assetId: string) => {
     try {
-      await deleteAsset.mutateAsync(assetId);
+      await assetManagement.handleDeleteAsset(assetId);
       toast({ title: 'Asset deleted', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
     }
   };
 
+  // Cash flow handlers with toast notifications
   const handleSaveIncome = async (categoryId: string, amount: number, description?: string) => {
     try {
-      await createIncoming.mutateAsync({ category_id: categoryId, year, month, amount, description });
+      await cashFlowManagement.handleSaveIncome(categoryId, amount, description);
       toast({ title: 'Income added', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to add income', status: 'error', duration: 3000 });
@@ -152,7 +99,7 @@ export default function InputPage() {
 
   const handleSaveExpense = async (categoryId: string, amount: number, description?: string) => {
     try {
-      await createExpense.mutateAsync({ category_id: categoryId, year, month, amount, description });
+      await cashFlowManagement.handleSaveExpense(categoryId, amount, description);
       toast({ title: 'Expense added', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to add expense', status: 'error', duration: 3000 });
@@ -161,7 +108,7 @@ export default function InputPage() {
 
   const handleDeleteIncome = async (id: string) => {
     try {
-      await deleteIncoming.mutateAsync(id);
+      await cashFlowManagement.handleDeleteIncome(id);
       toast({ title: 'Income deleted', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
@@ -170,7 +117,7 @@ export default function InputPage() {
 
   const handleDeleteExpense = async (id: string) => {
     try {
-      await deleteExpense.mutateAsync(id);
+      await cashFlowManagement.handleDeleteExpense(id);
       toast({ title: 'Expense deleted', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
@@ -190,33 +137,101 @@ export default function InputPage() {
           </HStack>
 
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
-            <Card><CardBody><Stat><StatLabel color="text.secondary">Total Assets Value</StatLabel><StatNumber color="text.primary" fontSize="xl">{formatCurrency(totalAssetValue)}</StatNumber><StatHelpText color="text.secondary">{assetsWithValuesCount} / {assets.length} entered</StatHelpText></Stat></CardBody></Card>
-            <Card><CardBody><Stat><StatLabel color="text.secondary">Total Income</StatLabel><StatNumber color="success.500" fontSize="xl">{formatCurrency(totalIncome)}</StatNumber><StatHelpText color="text.secondary">{incomings.length} entries</StatHelpText></Stat></CardBody></Card>
-            <Card><CardBody><Stat><StatLabel color="text.secondary">Total Expenses</StatLabel><StatNumber color="error.500" fontSize="xl">{formatCurrency(totalExpenses)}</StatNumber><StatHelpText color="text.secondary">{expenses.length} entries</StatHelpText></Stat></CardBody></Card>
-            <Card><CardBody><Stat><StatLabel color="text.secondary">Savings Rate</StatLabel><StatNumber color="brand.500" fontSize="xl">{savingsRate.toFixed(1)}%</StatNumber><StatHelpText color="text.secondary">Net: {formatCurrency(netSavings)}</StatHelpText></Stat></CardBody></Card>
+            <Card>
+              <CardBody>
+                <Stat>
+                  <StatLabel color="text.secondary">Total Assets Value</StatLabel>
+                  <StatNumber color="text.primary" fontSize="xl">
+                    {formatCurrency(assetManagement.totalValue)}
+                  </StatNumber>
+                  <StatHelpText color="text.secondary">
+                    {assetManagement.countWithValues} / {assetManagement.totalAssets} entered
+                  </StatHelpText>
+                </Stat>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Stat>
+                  <StatLabel color="text.secondary">Total Income</StatLabel>
+                  <StatNumber color="success.500" fontSize="xl">
+                    {formatCurrency(cashFlowManagement.totalIncome)}
+                  </StatNumber>
+                  <StatHelpText color="text.secondary">
+                    {cashFlowManagement.incomings.length} entries
+                  </StatHelpText>
+                </Stat>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Stat>
+                  <StatLabel color="text.secondary">Total Expenses</StatLabel>
+                  <StatNumber color="error.500" fontSize="xl">
+                    {formatCurrency(cashFlowManagement.totalExpenses)}
+                  </StatNumber>
+                  <StatHelpText color="text.secondary">
+                    {cashFlowManagement.expenses.length} entries
+                  </StatHelpText>
+                </Stat>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Stat>
+                  <StatLabel color="text.secondary">Savings Rate</StatLabel>
+                  <StatNumber color="brand.500" fontSize="xl">
+                    {cashFlowManagement.savingsRate.toFixed(1)}%
+                  </StatNumber>
+                  <StatHelpText color="text.secondary">
+                    Net: {formatCurrency(cashFlowManagement.netSavings)}
+                  </StatHelpText>
+                </Stat>
+              </CardBody>
+            </Card>
           </SimpleGrid>
 
           <Box>
             <Heading size="md" mb={4} color="text.primary">Asset Values</Heading>
             <VStack spacing={6} align="stretch">
-              {[
-                { code: 'SINGLE_STOCKS', name: 'Single Stocks', requiresTicker: true },
-                { code: 'ETF_STOCKS', name: 'ETF Stocks', requiresTicker: true },
-                { code: 'ETF_BONDS', name: 'ETF Bonds', requiresTicker: true },
-                { code: 'CRYPTO', name: 'Crypto', requiresTicker: true },
-                { code: 'PRIVATE_EQUITY', name: 'Private Equity', requiresTicker: false },
-                { code: 'BUSINESS_PROFITS', name: 'Business Profits', requiresTicker: false },
-                { code: 'REAL_ESTATE', name: 'Real Estate', requiresTicker: false },
-                { code: 'CASH', name: 'Cash Liquidity', requiresTicker: false },
-              ].map(({ code, name, requiresTicker }) => (
-                <Card key={code}><CardBody><CategoryAssetForm categoryCode={code} categoryName={name} assets={assetsByCategory[code as keyof typeof assetsByCategory]} onSave={handleSaveAsset} onEditAsset={handleEditAsset} onAdd={handleAddAsset} onDelete={handleDeleteAsset} requiresTicker={requiresTicker} /></CardBody></Card>
+              {assetManagement.categoryMetadata.map(({ code, name, requiresTicker }) => (
+                <Card key={code}>
+                  <CardBody>
+                    <CategoryAssetForm
+                      categoryCode={code}
+                      categoryName={name}
+                      assets={assetManagement.assetsByCategory[code]}
+                      onSave={handleSaveAsset}
+                      onEditAsset={handleEditAsset}
+                      onAdd={handleAddAsset}
+                      onDelete={handleDeleteAsset}
+                      requiresTicker={requiresTicker}
+                    />
+                  </CardBody>
+                </Card>
               ))}
             </VStack>
           </Box>
 
           <Divider />
 
-          <Card><CardBody><CashFlowInputSection year={year} month={month} incomeItems={incomings} expenseItems={expenses} onSaveIncome={handleSaveIncome} onSaveExpense={handleSaveExpense} onDeleteIncome={handleDeleteIncome} onDeleteExpense={handleDeleteExpense} /></CardBody></Card>
+          <Card>
+            <CardBody>
+              <CashFlowInputSection
+                year={year}
+                month={month}
+                incomeItems={cashFlowManagement.incomings}
+                expenseItems={cashFlowManagement.expenses}
+                onSaveIncome={handleSaveIncome}
+                onSaveExpense={handleSaveExpense}
+                onDeleteIncome={handleDeleteIncome}
+                onDeleteExpense={handleDeleteExpense}
+              />
+            </CardBody>
+          </Card>
         </VStack>
       </MainLayout>
     </ProtectedRoute>

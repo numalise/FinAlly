@@ -100,12 +100,15 @@ export default function AllocationPage() {
         title: 'Target updated',
         status: 'success',
         duration: 2000,
+        isClosable: true,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Failed to update target',
+        description: error.message || 'An error occurred',
         status: 'error',
-        duration: 3000,
+        duration: 4000,
+        isClosable: true,
       });
     }
   };

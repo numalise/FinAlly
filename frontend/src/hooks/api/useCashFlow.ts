@@ -37,10 +37,11 @@ export function useCreateIncoming() {
 
 export function useDeleteIncoming() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: api.deleteIncoming,
     onSuccess: () => {
+      // Invalidate all incomings and budgets queries (year/month specific)
       queryClient.invalidateQueries({ queryKey: ['incomings'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },
@@ -61,10 +62,11 @@ export function useCreateExpense() {
 
 export function useDeleteExpense() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: api.deleteExpense,
     onSuccess: () => {
+      // Invalidate all expenses and budgets queries (year/month specific)
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
     },

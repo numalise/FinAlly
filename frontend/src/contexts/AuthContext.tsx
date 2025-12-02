@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@/hooks/api/useUser';
 
 interface User {
   id: string;
@@ -21,46 +22,35 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
   const router = useRouter();
+
+  // Use React Query hook for user data
+  const {
+    data: userData,
+    isLoading: userLoading,
+    refetch: refetchUser,
+  } = useUser();
+
+  const user = userData?.data || null;
 
   // Check for existing token on mount
   useEffect(() => {
     const storedToken = localStorage.getItem('accessToken');
     if (storedToken) {
       setToken(storedToken);
-      fetchUser(storedToken);
-    } else {
-      setIsLoading(false);
+      // React Query will automatically fetch user data
     }
+    setIsInitializing(false);
   }, []);
 
-  const fetchUser = async (authToken: string) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.data);
-      } else {
-        // Token invalid, clear it
-        localStorage.removeItem('accessToken');
-        setToken(null);
-      }
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      localStorage.removeItem('accessToken');
-      setToken(null);
-    } finally {
-      setIsLoading(false);
+  // Refetch user when token changes
+  useEffect(() => {
+    if (token) {
+      refetchUser();
     }
-  };
+  }, [token, refetchUser]);
 
   const login = async (email: string, password: string) => {
     // This will be replaced with actual Cognito login
@@ -71,18 +61,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setTokenFromCognito = (idToken: string) => {
     localStorage.setItem('accessToken', idToken);
     setToken(idToken);
-    fetchUser(idToken);
   };
 
   const logout = () => {
     localStorage.removeItem('accessToken');
     setToken(null);
-    setUser(null);
     router.push('/login');
   };
 
+  const isLoading = isInitializing || (token !== null && userLoading);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout, setTokenFromCognito }}>
+    <AuthContext.Provider
+      value={{ user, token, isLoading, login, logout, setTokenFromCognito }}
+    >
       {children}
     </AuthContext.Provider>
   );
