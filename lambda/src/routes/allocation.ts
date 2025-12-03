@@ -3,6 +3,71 @@ import { PrismaClient } from '@prisma/client';
 import { successResponse, errorResponse } from '../utils/response';
 import { getPath, getMethod, getPathParts, getBody } from '../utils/eventHelpers';
 
+async function calculateAllocationHistory(
+  prisma: PrismaClient,
+  userId: string
+): Promise<any[]> {
+  const now = new Date();
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+  // Fetch asset inputs for last 6 months
+  const inputs = await prisma.assetInput.findMany({
+    where: {
+      userId,
+      OR: Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(sixMonthsAgo);
+        d.setMonth(d.getMonth() + i);
+        return { year: d.getFullYear(), month: d.getMonth() + 1 };
+      }),
+    },
+    include: {
+      asset: {
+        include: {
+          category: true,
+        },
+      },
+    },
+    orderBy: [{ year: 'asc' }, { month: 'asc' }],
+  });
+
+  // Group by month, then by category
+  const monthlyData: Record<string, Record<string, number>> = {};
+
+  inputs.forEach(input => {
+    const monthKey = `${input.year}-${input.month}`;
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = {};
+    }
+
+    const categoryCode = input.asset.category.code;
+    if (!monthlyData[monthKey][categoryCode]) {
+      monthlyData[monthKey][categoryCode] = 0;
+    }
+
+    monthlyData[monthKey][categoryCode] += parseFloat(String(input.total));
+  });
+
+  // Convert to history format with percentages
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const history = Object.entries(monthlyData).map(([monthKey, categories]) => {
+    const [year, month] = monthKey.split('-').map(Number);
+    const total = Object.values(categories).reduce((sum, val) => sum + val, 0);
+
+    const historyPoint: any = {
+      month: `${monthNames[month - 1]} ${year}`,
+    };
+
+    // Add each category as a percentage
+    Object.entries(categories).forEach(([catCode, value]) => {
+      historyPoint[catCode.toLowerCase()] = total > 0 ? (value / total) * 100 : 0;
+    });
+
+    return historyPoint;
+  });
+
+  return history;
+}
+
 export async function handleAllocation(
   event: APIGatewayProxyEvent,
   prisma: PrismaClient,
@@ -112,11 +177,14 @@ export async function handleAllocation(
         };
       });
 
+      const history = await calculateAllocationHistory(prisma, userId);
+
       return successResponse({
         categories: result,
         total_value: currentTotal,
         previous_total_value: previousTotal,
         total_change: currentTotal - previousTotal,
+        history: history,
       });
     }
 

@@ -24,18 +24,15 @@ import MainLayout from '@/components/layout/MainLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import CategoryCard from '@/components/allocation/CategoryCard';
 import CategoryDetailModal from '@/components/allocation/CategoryDetailModal';
+import CategoryTargetEditor from '@/components/allocation/CategoryTargetEditor';
 import CashLiquiditySection from '@/components/allocation/CashLiquiditySection';
 import AllocationHistoryChart from '@/components/allocation/AllocationHistoryChart';
 import { formatCurrency } from '@/utils/formatters';
 import { CategoryAllocation } from '@/types/allocation';
+import { getColorForIndex } from '@/utils/colorGenerator';
 
 // ✅ Use REAL API hooks
 import { useAllocation, useUpdateCategoryTarget } from '@/hooks/api/useAllocation';
-
-const BLUE_PALETTE = [
-  '#2196f3', '#1e88e5', '#1976d2', '#1565c0',
-  '#0d47a1', '#64b5f6', '#42a5f5', '#90caf9',
-];
 
 export default function AllocationPage() {
   const toast = useToast();
@@ -81,7 +78,7 @@ export default function AllocationPage() {
     delta: cat.delta,
     deltaPercentage: cat.delta_percentage,
     assets: cat.assets || [],
-    color: BLUE_PALETTE[index % BLUE_PALETTE.length],
+    color: getColorForIndex(index),
     hasMarketCapTargets: ['SINGLE_STOCKS', 'ETF_STOCKS', 'ETF_BONDS', 'CRYPTO'].includes(cat.category),
   }));
 
@@ -195,6 +192,18 @@ export default function AllocationPage() {
 
           <Box>
             <Heading size="md" mb={4} color="text.primary">
+              Set Target Allocations
+            </Heading>
+            <CategoryTargetEditor
+              categories={categories}
+              onUpdateTarget={handleUpdateTarget}
+            />
+          </Box>
+
+          <Divider borderColor="background.tertiary" />
+
+          <Box>
+            <Heading size="md" mb={4} color="text.primary">
               Investment Categories
             </Heading>
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
@@ -208,16 +217,14 @@ export default function AllocationPage() {
             </SimpleGrid>
           </Box>
 
-          {allocationHistory.length > 0 && (
-            <Card bg="background.secondary" border="none">
-              <CardBody>
-                <AllocationHistoryChart
-                  data={allocationHistory}
-                  categories={categoryChartData}
-                />
-              </CardBody>
-            </Card>
-          )}
+          <Card bg="background.secondary" border="none">
+            <CardBody>
+              <AllocationHistoryChart
+                data={allocationHistory}
+                categories={categoryChartData}
+              />
+            </CardBody>
+          </Card>
         </VStack>
 
         <CategoryDetailModal

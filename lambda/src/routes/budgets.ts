@@ -23,26 +23,43 @@ export async function handleBudgets(
         return errorResponse('VALIDATION_ERROR', 'year and month are required', 400);
       }
 
+      // Fetch ALL expense categories
+      const allExpenseCategories = await prisma.expenseCategory.findMany({
+        orderBy: { name: 'asc' },
+      });
+
+      // Fetch existing budgets for this user/year/month
       const budgets = await prisma.budget.findMany({
         where: { userId, year, month },
         include: { category: true },
       });
 
+      // Fetch actual expenses for this user/year/month
       const expenses = await prisma.expenseItem.findMany({
         where: { userId, year, month },
       });
 
+      // Group expenses by category
       const expensesByCategory = expenses.reduce((acc: Record<string, number>, expense) => {
         acc[expense.categoryId] = (acc[expense.categoryId] || 0) + parseFloat(String(expense.amount));
         return acc;
       }, {});
 
-      const result = budgets.map(budget => ({
-        category: budget.categoryId,
-        categoryName: budget.category.name,
-        budgetAmount: parseFloat(String(budget.budgetAmount)),
-        actualAmount: expensesByCategory[budget.categoryId] || 0,
-        calculated: budget.calculated,
+      // Map budgets by category for quick lookup
+      const budgetsByCategory = budgets.reduce((acc: Record<string, any>, budget) => {
+        acc[budget.categoryId] = budget;
+        return acc;
+      }, {});
+
+      // Return ALL expense categories with their budget/actual amounts (or 0 if none)
+      const result = allExpenseCategories.map(category => ({
+        category: category.id,
+        categoryName: category.name,
+        budgetAmount: budgetsByCategory[category.id]
+          ? parseFloat(String(budgetsByCategory[category.id].budgetAmount))
+          : 0,
+        actualAmount: expensesByCategory[category.id] || 0,
+        calculated: budgetsByCategory[category.id]?.calculated || false,
       }));
 
       return successResponse(result);

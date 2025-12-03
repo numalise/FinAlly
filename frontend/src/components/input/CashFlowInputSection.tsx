@@ -31,7 +31,7 @@ import {
   TabPanel,
   Input,
 } from '@chakra-ui/react';
-import { FiPlus, FiTrash2, FiSave } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiSave, FiEdit2 } from 'react-icons/fi';
 import { useState } from 'react';
 import { formatCurrency } from '@/utils/formatters';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '@/types/input';
@@ -51,6 +51,8 @@ interface CashFlowInputSectionProps {
   expenseItems: CashFlowItem[];
   onSaveIncome: (categoryId: string, amount: number, description?: string) => void;
   onSaveExpense: (categoryId: string, amount: number, description?: string) => void;
+  onUpdateIncome: (id: string, categoryId: string, amount: number, description?: string) => void;
+  onUpdateExpense: (id: string, categoryId: string, amount: number, description?: string) => void;
   onDeleteIncome: (id: string) => void;
   onDeleteExpense: (id: string) => void;
 }
@@ -62,17 +64,23 @@ export default function CashFlowInputSection({
   expenseItems,
   onSaveIncome,
   onSaveExpense,
+  onUpdateIncome,
+  onUpdateExpense,
   onDeleteIncome,
   onDeleteExpense,
 }: CashFlowInputSectionProps) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [activeTab, setActiveTab] = useState(0);
+  const [editMode, setEditMode] = useState<'create' | 'update'>('create');
+  const [editItemId, setEditItemId] = useState<string>('');
   const [editCategoryId, setEditCategoryId] = useState('');
   const [editAmount, setEditAmount] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
   const handleAddIncome = () => {
+    setEditMode('create');
     setActiveTab(0);
+    setEditItemId('');
     setEditCategoryId(INCOME_CATEGORIES[0].code);
     setEditAmount('');
     setEditDescription('');
@@ -80,21 +88,53 @@ export default function CashFlowInputSection({
   };
 
   const handleAddExpense = () => {
+    setEditMode('create');
     setActiveTab(1);
+    setEditItemId('');
     setEditCategoryId(EXPENSE_CATEGORIES[0].code);
     setEditAmount('');
     setEditDescription('');
     onOpen();
   };
 
+  const handleEditIncome = (item: CashFlowItem) => {
+    setEditMode('update');
+    setActiveTab(0);
+    setEditItemId(item.id);
+    setEditCategoryId(item.categoryId);
+    setEditAmount(String(item.amount));
+    setEditDescription(item.description || '');
+    onOpen();
+  };
+
+  const handleEditExpense = (item: CashFlowItem) => {
+    setEditMode('update');
+    setActiveTab(1);
+    setEditItemId(item.id);
+    setEditCategoryId(item.categoryId);
+    setEditAmount(String(item.amount));
+    setEditDescription(item.description || '');
+    onOpen();
+  };
+
   const handleSave = () => {
     if (editCategoryId && editAmount) {
-      if (activeTab === 0) {
-        onSaveIncome(editCategoryId, parseFloat(editAmount), editDescription);
+      if (editMode === 'create') {
+        if (activeTab === 0) {
+          onSaveIncome(editCategoryId, parseFloat(editAmount), editDescription);
+        } else {
+          onSaveExpense(editCategoryId, parseFloat(editAmount), editDescription);
+        }
       } else {
-        onSaveExpense(editCategoryId, parseFloat(editAmount), editDescription);
+        if (activeTab === 0) {
+          onUpdateIncome(editItemId, editCategoryId, parseFloat(editAmount), editDescription);
+        } else {
+          onUpdateExpense(editItemId, editCategoryId, parseFloat(editAmount), editDescription);
+        }
       }
       onClose();
+      setEditMode('create');
+      setEditItemId('');
       setEditCategoryId('');
       setEditAmount('');
       setEditDescription('');
@@ -206,14 +246,24 @@ export default function CashFlowInputSection({
                             </Text>
                           </Td>
                           <Td>
-                            <IconButton
-                              aria-label="Delete"
-                              icon={<FiTrash2 />}
-                              size="sm"
-                              variant="ghost"
-                              color="red.400"
-                              onClick={() => onDeleteIncome(item.id)}
-                            />
+                            <HStack spacing={1}>
+                              <IconButton
+                                aria-label="Edit"
+                                icon={<FiEdit2 />}
+                                size="sm"
+                                variant="ghost"
+                                color="blue.400"
+                                onClick={() => handleEditIncome(item)}
+                              />
+                              <IconButton
+                                aria-label="Delete"
+                                icon={<FiTrash2 />}
+                                size="sm"
+                                variant="ghost"
+                                color="red.400"
+                                onClick={() => onDeleteIncome(item.id)}
+                              />
+                            </HStack>
                           </Td>
                         </Tr>
                       ))}
@@ -274,14 +324,24 @@ export default function CashFlowInputSection({
                             </Text>
                           </Td>
                           <Td>
-                            <IconButton
-                              aria-label="Delete"
-                              icon={<FiTrash2 />}
-                              size="sm"
-                              variant="ghost"
-                              color="red.400"
-                              onClick={() => onDeleteExpense(item.id)}
-                            />
+                            <HStack spacing={1}>
+                              <IconButton
+                                aria-label="Edit"
+                                icon={<FiEdit2 />}
+                                size="sm"
+                                variant="ghost"
+                                color="blue.400"
+                                onClick={() => handleEditExpense(item)}
+                              />
+                              <IconButton
+                                aria-label="Delete"
+                                icon={<FiTrash2 />}
+                                size="sm"
+                                variant="ghost"
+                                color="red.400"
+                                onClick={() => onDeleteExpense(item.id)}
+                              />
+                            </HStack>
                           </Td>
                         </Tr>
                       ))}
@@ -302,7 +362,9 @@ export default function CashFlowInputSection({
         <ModalOverlay />
         <ModalContent bg="background.secondary">
           <ModalHeader color="text.primary">
-            {activeTab === 0 ? 'Add Income' : 'Add Expense'}
+            {editMode === 'create'
+              ? (activeTab === 0 ? 'Add Income' : 'Add Expense')
+              : (activeTab === 0 ? 'Edit Income' : 'Edit Expense')}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>

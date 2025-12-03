@@ -41,10 +41,14 @@ export async function handleNetworth(
         byMonth[key].total += parseFloat(String(input.total));
       });
 
-      const history = Object.values(byMonth).map(item => ({
-        month: new Date(item.year, item.month - 1).toLocaleString('en', { month: 'short' }),
-        value: item.total,
-      }));
+      const history = Object.values(byMonth).map(item => {
+        const date = new Date(item.year, item.month - 1);
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return {
+          month: `${monthNames[date.getMonth()]} ${date.getFullYear()}`,
+          value: item.total,
+        };
+      });
 
       return successResponse(history);
     }
@@ -52,7 +56,8 @@ export async function handleNetworth(
     // GET /networth/projection
     if (method === 'GET' && path.includes('/projection')) {
       const now = new Date();
-      
+
+      // Fetch last 4 months of data
       const inputs = await prisma.assetInput.findMany({
         where: {
           userId,
@@ -63,18 +68,29 @@ export async function handleNetworth(
         },
       });
 
-      const byMonth: Record<string, number> = {};
+      // Group by month and SORT chronologically
+      const byMonth: Record<string, { year: number; month: number; total: number }> = {};
       inputs.forEach(input => {
         const key = `${input.year}-${input.month}`;
-        byMonth[key] = (byMonth[key] || 0) + parseFloat(String(input.total));
+        if (!byMonth[key]) {
+          byMonth[key] = { year: input.year, month: input.month, total: 0 };
+        }
+        byMonth[key].total += parseFloat(String(input.total));
       });
 
-      const values = Object.values(byMonth);
-      
+      // Convert to array and sort by date (oldest to newest)
+      const sortedMonths = Object.values(byMonth).sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return a.month - b.month;
+      });
+
+      const values = sortedMonths.map(m => m.total);
+
       if (values.length < 2) {
         return successResponse([]);
       }
 
+      // Calculate month-over-month growth
       const growths = [];
       for (let i = 1; i < values.length; i++) {
         growths.push(values[i] - values[i - 1]);
@@ -82,10 +98,13 @@ export async function handleNetworth(
       const avgGrowth = growths.reduce((sum, g) => sum + g, 0) / growths.length;
 
       const currentValue = values[values.length - 1];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      // Generate 7-month projection (current month + 6 future months)
       const projection = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
         return {
-          month: d.toLocaleString('en', { month: 'short' }),
+          month: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
           actual: i === 0 ? currentValue : undefined,
           projected: currentValue + (avgGrowth * i),
         };

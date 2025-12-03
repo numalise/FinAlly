@@ -102,24 +102,15 @@ export default function CategoryAssetForm({
     if (editMode === 'add') {
       // Create new asset with all required fields
       const marketCap = formMarketCap ? parseFloat(formMarketCap) : undefined;
-      console.log('[CategoryAssetForm] Creating asset:', { categoryCode, formName, formTicker, marketCap });
       const result = await onAdd(categoryCode, formName, formTicker || undefined, marketCap);
-      console.log('[CategoryAssetForm] Asset created, result:', result);
 
       // Save initial value if provided
       if (result && formValue) {
-        console.log('[CategoryAssetForm] Checking for created asset ID in result.data:', result.data);
         // The result should contain the created asset's data
-        const createdAsset = result.data?.data;
-        console.log('[CategoryAssetForm] Created asset:', createdAsset);
+        const createdAsset = result.data;
         if (createdAsset?.id) {
-          console.log('[CategoryAssetForm] Saving initial value:', parseFloat(formValue), 'for asset:', createdAsset.id);
           await onSave(createdAsset.id, parseFloat(formValue), formNotes);
-        } else {
-          console.warn('[CategoryAssetForm] No asset ID found in result, cannot save initial value');
         }
-      } else {
-        console.log('[CategoryAssetForm] No initial value to save or no result:', { result, formValue });
       }
     } else if (editMode === 'edit' && editingAsset) {
       // Update asset details

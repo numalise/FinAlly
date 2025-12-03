@@ -52,6 +52,33 @@ export async function handleExpenses(
       return successResponse(expense, 201);
     }
 
+    // PATCH /expenses/:id - Update expense entry
+    if (method === 'PATCH' && pathParts.length === 2) {
+      const expenseId = pathParts[1];
+      const body = JSON.parse(event.body || '{}');
+      const { category_id, amount, description } = body;
+
+      const existing = await prisma.expenseItem.findFirst({
+        where: { id: expenseId, userId },
+      });
+
+      if (!existing) {
+        return errorResponse('NOT_FOUND', 'Expense entry not found', 404);
+      }
+
+      const updated = await prisma.expenseItem.update({
+        where: { id: expenseId },
+        data: {
+          categoryId: category_id || existing.categoryId,
+          amount: amount !== undefined ? String(amount) : existing.amount,
+          description: description !== undefined ? description : existing.description,
+        },
+        include: { category: true },
+      });
+
+      return successResponse(updated);
+    }
+
     // DELETE /expenses/:id
     if (method === 'DELETE' && pathParts.length === 2) {
       const expenseId = pathParts[1];

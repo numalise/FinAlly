@@ -71,6 +71,8 @@ export const api = {
     apiClient.get(`/incomings?year=${year}&month=${month}`),
   createIncoming: (data: { category_id: string; year: number; month: number; amount: number; description?: string }) =>
     apiClient.post('/incomings', data),
+  updateIncoming: (id: string, data: { category_id?: string; amount?: number; description?: string }) =>
+    apiClient.patch(`/incomings/${id}`, data),
   deleteIncoming: (id: string) => apiClient.delete(`/incomings/${id}`),
 
   // Expenses
@@ -78,6 +80,8 @@ export const api = {
     apiClient.get(`/expenses?year=${year}&month=${month}`),
   createExpense: (data: { category_id: string; year: number; month: number; amount: number; description?: string }) =>
     apiClient.post('/expenses', data),
+  updateExpense: (id: string, data: { category_id?: string; amount?: number; description?: string }) =>
+    apiClient.patch(`/expenses/${id}`, data),
   deleteExpense: (id: string) => apiClient.delete(`/expenses/${id}`),
 
   // Budgets

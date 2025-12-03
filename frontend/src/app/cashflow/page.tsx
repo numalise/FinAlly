@@ -25,6 +25,9 @@ import CashFlowInputSection from '@/components/input/CashFlowInputSection';
 import { formatCurrency } from '@/utils/formatters';
 import { useCashFlowManagement } from '@/hooks/useCashFlowManagement';
 import { useOptimisticMutation } from '@/hooks/useOptimisticMutation';
+import { useBudgets, useUpdateBudget } from '@/hooks/api/useBudgets';
+import BudgetTable from '@/components/dashboard/BudgetTable';
+import { useMemo } from 'react';
 
 export default function CashFlowPage() {
   const toast = useToast();
@@ -43,9 +46,26 @@ export default function CashFlowPage() {
     isLoading,
     handleSaveIncome,
     handleSaveExpense,
+    handleUpdateIncome,
+    handleUpdateExpense,
     handleDeleteIncome,
     handleDeleteExpense,
   } = useCashFlowManagement(year, month);
+
+  // Fetch budget data
+  const { data: budgetsData } = useBudgets(year, month);
+  const budgets = useMemo(() => budgetsData?.data || [], [budgetsData]);
+  const updateBudget = useUpdateBudget();
+
+  // Calculate budget totals
+  const totalBudget = useMemo(
+    () => budgets.reduce((sum: number, b: any) => sum + b.budgetAmount, 0),
+    [budgets]
+  );
+  const totalActualExpenses = useMemo(
+    () => budgets.reduce((sum: number, b: any) => sum + b.actualAmount, 0),
+    [budgets]
+  );
 
   // Wrap handlers with toast notifications
   const onSaveIncome = async (categoryId: string, amount: number, description?: string) => {
@@ -66,6 +86,24 @@ export default function CashFlowPage() {
     }
   };
 
+  const onUpdateIncome = async (id: string, categoryId: string, amount: number, description?: string) => {
+    try {
+      await handleUpdateIncome(id, categoryId, amount, description);
+      toast({ title: 'Income updated', status: 'success', duration: 2000 });
+    } catch (error) {
+      toast({ title: 'Failed to update income', status: 'error', duration: 3000 });
+    }
+  };
+
+  const onUpdateExpense = async (id: string, categoryId: string, amount: number, description?: string) => {
+    try {
+      await handleUpdateExpense(id, categoryId, amount, description);
+      toast({ title: 'Expense updated', status: 'success', duration: 2000 });
+    } catch (error) {
+      toast({ title: 'Failed to update expense', status: 'error', duration: 3000 });
+    }
+  };
+
   const onDeleteIncome = async (id: string) => {
     try {
       await handleDeleteIncome(id);
@@ -81,6 +119,29 @@ export default function CashFlowPage() {
       toast({ title: 'Expense deleted', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to delete', status: 'error', duration: 3000 });
+    }
+  };
+
+  const handleUpdateBudget = async (category: string, amount: number) => {
+    try {
+      await updateBudget.mutateAsync({
+        category,
+        data: { amount, year, month },
+      });
+      toast({
+        title: 'Budget updated',
+        status: 'success',
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to update budget',
+        description: error.message || 'An error occurred',
+        status: 'error',
+        duration: 4000,
+        isClosable: true,
+      });
     }
   };
 
@@ -170,6 +231,18 @@ export default function CashFlowPage() {
             </Card>
           </SimpleGrid>
 
+          {/* Budget Section */}
+          <Card bg="background.secondary" border="none">
+            <CardBody>
+              <BudgetTable
+                budgets={budgets}
+                totalBudget={totalBudget}
+                totalActual={totalActualExpenses}
+                onUpdateBudget={handleUpdateBudget}
+              />
+            </CardBody>
+          </Card>
+
           <Card bg="background.secondary" border="none">
             <CardBody>
               <CashFlowInputSection
@@ -179,6 +252,8 @@ export default function CashFlowPage() {
                 expenseItems={expenses}
                 onSaveIncome={onSaveIncome}
                 onSaveExpense={onSaveExpense}
+                onUpdateIncome={onUpdateIncome}
+                onUpdateExpense={onUpdateExpense}
                 onDeleteIncome={onDeleteIncome}
                 onDeleteExpense={onDeleteExpense}
               />

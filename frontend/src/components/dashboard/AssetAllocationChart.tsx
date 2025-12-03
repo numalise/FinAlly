@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatCurrency } from '@/utils/formatters';
 import { FiPlus, FiMinus, FiArrowRight } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
+import { getColorForIndex } from '@/utils/colorGenerator';
 
 interface AssetData {
   category: string;
@@ -17,11 +18,6 @@ interface AssetData {
 interface AssetAllocationProps {
   data: AssetData[];
 }
-
-const BLUE_PALETTE = [
-  '#2196f3', '#1e88e5', '#1976d2', '#1565c0',
-  '#0d47a1', '#64b5f6', '#42a5f5', '#90caf9',
-];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -71,11 +67,10 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                   outerRadius={140}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ percentage }) => `${percentage}%`}
                   stroke="none"
                 >
                   {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={BLUE_PALETTE[index % BLUE_PALETTE.length]} />
+                    <Cell key={`cell-${index}`} fill={getColorForIndex(index)} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
@@ -109,7 +104,7 @@ export default function AssetAllocationChart({ data }: AssetAllocationProps) {
                   <Tr key={item.category}>
                     <Td border="none">
                       <HStack spacing={2}>
-                        <Box w="12px" h="12px" borderRadius="sm" bg={BLUE_PALETTE[index]} />
+                        <Box w="12px" h="12px" borderRadius="sm" bg={getColorForIndex(index)} />
                         <Text color="text.primary" fontWeight="medium">
                           {item.category}
                         </Text>

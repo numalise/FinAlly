@@ -9,6 +9,8 @@ import {
   useExpenses,
   useCreateIncoming,
   useCreateExpense,
+  useUpdateIncoming,
+  useUpdateExpense,
   useDeleteIncoming,
   useDeleteExpense,
 } from '@/hooks/api/useCashFlow';
@@ -30,21 +32,29 @@ export function useCashFlowManagement(year: number, month: number) {
   // Mutations
   const createIncoming = useCreateIncoming();
   const createExpense = useCreateExpense();
+  const updateIncoming = useUpdateIncoming();
+  const updateExpense = useUpdateExpense();
   const deleteIncoming = useDeleteIncoming();
   const deleteExpense = useDeleteExpense();
 
   // Parse raw data and ensure amounts are numbers
   const incomings: CashFlowItem[] = useMemo(
     () => (incomingsData?.data || []).map((item: any) => ({
-      ...item,
+      id: item.id,
+      categoryId: item.categoryId,
+      categoryName: item.category?.name || 'Unknown',
       amount: typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount,
+      description: item.description,
     })),
     [incomingsData]
   );
   const expenses: CashFlowItem[] = useMemo(
     () => (expensesData?.data || []).map((item: any) => ({
-      ...item,
+      id: item.id,
+      categoryId: item.categoryId,
+      categoryName: item.category?.name || 'Unknown',
       amount: typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount,
+      description: item.description,
     })),
     [expensesData]
   );
@@ -84,6 +94,38 @@ export function useCashFlowManagement(year: number, month: number) {
     });
   };
 
+  const handleUpdateIncome = async (
+    id: string,
+    categoryId: string,
+    amount: number,
+    description?: string
+  ) => {
+    return updateIncoming.mutateAsync({
+      id,
+      data: {
+        category_id: categoryId,
+        amount,
+        description,
+      },
+    });
+  };
+
+  const handleUpdateExpense = async (
+    id: string,
+    categoryId: string,
+    amount: number,
+    description?: string
+  ) => {
+    return updateExpense.mutateAsync({
+      id,
+      data: {
+        category_id: categoryId,
+        amount,
+        description,
+      },
+    });
+  };
+
   const handleDeleteIncome = async (id: string) => {
     return deleteIncoming.mutateAsync(id);
   };
@@ -109,12 +151,16 @@ export function useCashFlowManagement(year: number, month: number) {
     // Mutation states
     isCreatingIncome: createIncoming.isPending,
     isCreatingExpense: createExpense.isPending,
+    isUpdatingIncome: updateIncoming.isPending,
+    isUpdatingExpense: updateExpense.isPending,
     isDeletingIncome: deleteIncoming.isPending,
     isDeletingExpense: deleteExpense.isPending,
 
     // Handlers
     handleSaveIncome,
     handleSaveExpense,
+    handleUpdateIncome,
+    handleUpdateExpense,
     handleDeleteIncome,
     handleDeleteExpense,
   };

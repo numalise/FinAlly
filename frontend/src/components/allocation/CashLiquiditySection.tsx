@@ -13,6 +13,7 @@ import {
   HStack,
   VStack,
   Badge,
+  Progress,
 } from '@chakra-ui/react';
 import { formatCurrency } from '@/utils/formatters';
 import { CategoryAllocation } from '@/types/allocation';
@@ -75,6 +76,47 @@ export default function CashLiquiditySection({ category }: CashLiquiditySectionP
             </Badge>
           </VStack>
         </HStack>
+
+        {/* Progress Bar Section */}
+        <Box>
+          <HStack justify="space-between" mb={2}>
+            <VStack align="start" spacing={0}>
+              <Text fontSize="xs" color="text.secondary">Current</Text>
+              <Text fontSize="sm" fontWeight="medium" color="text.primary">
+                {(category.currentPercentage || 0).toFixed(1)}%
+              </Text>
+            </VStack>
+            <VStack align="center" spacing={0}>
+              <Text
+                fontSize="xs"
+                color={isOnTarget ? 'text.secondary' : isOver ? 'orange.400' : 'blue.400'}
+              >
+                {(category.deltaPercentage || 0) > 0 ? '+' : ''}
+                {(category.deltaPercentage || 0).toFixed(1)}%
+              </Text>
+            </VStack>
+            <VStack align="end" spacing={0}>
+              <Text fontSize="xs" color="text.secondary">Target</Text>
+              <Text fontSize="sm" fontWeight="medium" color="text.secondary">
+                {(category.targetPercentage || 0).toFixed(1)}%
+              </Text>
+            </VStack>
+          </HStack>
+
+          <Progress
+            value={Math.min(
+              category.targetPercentage > 0
+                ? ((category.currentPercentage || 0) / category.targetPercentage) * 100
+                : 0,
+              100
+            )}
+            max={100}
+            colorScheme={isOnTarget ? 'green' : isUnder ? 'blue' : 'orange'}
+            bg="background.tertiary"
+            borderRadius="full"
+            h="6px"
+          />
+        </Box>
 
         {/* Asset Details Table */}
         <Box>

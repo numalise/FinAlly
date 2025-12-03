@@ -21,7 +21,6 @@ import MainLayout from '@/components/layout/MainLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import CombinedNetWorthChart from '@/components/dashboard/CombinedNetWorthChart';
 import AssetAllocationChart from '@/components/dashboard/AssetAllocationChart';
-import BudgetTable from '@/components/dashboard/BudgetTable';
 import { formatCurrency } from '@/utils/formatters';
 import {
   calculateNetWorthChange,
@@ -32,7 +31,6 @@ import {
 // API hooks
 import { useNetworthHistory, useNetworthProjection } from '@/hooks/api/useNetworth';
 import { useAllocation } from '@/hooks/api/useAllocation';
-import { useBudgets, useUpdateBudget } from '@/hooks/api/useBudgets';
 import { useCashFlowManagement } from '@/hooks/useCashFlowManagement';
 
 export default function DashboardPage() {
@@ -44,7 +42,6 @@ export default function DashboardPage() {
   const { data: networthData, isLoading: networthLoading } = useNetworthHistory();
   const { data: projectionData, isLoading: projectionLoading } = useNetworthProjection();
   const { data: allocationData, isLoading: allocationLoading } = useAllocation();
-  const { data: budgetsData } = useBudgets(currentYear, currentMonth);
 
   // Use centralized cash flow hook
   const { totalIncome, totalExpenses, isLoading: cashFlowLoading } = useCashFlowManagement(
@@ -52,15 +49,12 @@ export default function DashboardPage() {
     currentMonth
   );
 
-  const updateBudget = useUpdateBudget();
-
   const isLoading = networthLoading || projectionLoading || allocationLoading || cashFlowLoading;
 
   // Parse and memoize data
   const networthHistory = useMemo(() => networthData?.data || [], [networthData]);
   const projections = useMemo(() => projectionData?.data || [], [projectionData]);
   const allocation = useMemo(() => allocationData?.data || {}, [allocationData]);
-  const budgets = useMemo(() => budgetsData?.data || [], [budgetsData]);
 
   // Calculate net worth metrics
   const currentNetWorth = useMemo(
@@ -74,16 +68,6 @@ export default function DashboardPage() {
   const { monthlyChange, monthlyChangePercent, isPositiveChange } = useMemo(
     () => calculateNetWorthChange(currentNetWorth, previousNetWorth),
     [currentNetWorth, previousNetWorth]
-  );
-
-  // Calculate budget totals
-  const totalBudget = useMemo(
-    () => budgets.reduce((sum: number, b: any) => sum + b.budget_amount, 0),
-    [budgets]
-  );
-  const totalActualExpenses = useMemo(
-    () => budgets.reduce((sum: number, b: any) => sum + b.actual_amount, 0),
-    [budgets]
   );
 
   // Format allocation data for chart
@@ -103,10 +87,8 @@ export default function DashboardPage() {
   const netWorthHistory = useMemo(
     () =>
       networthHistory.map((item: any) => ({
-        month: new Date(item.year, item.month - 1).toLocaleDateString('en-US', {
-          month: 'short',
-        }),
-        value: item.net_worth,
+        month: item.month,
+        value: item.value,
       })),
     [networthHistory]
   );
@@ -115,25 +97,12 @@ export default function DashboardPage() {
   const projectionChart = useMemo(
     () =>
       projections.map((item: any) => ({
-        month: new Date(item.year, item.month - 1).toLocaleDateString('en-US', {
-          month: 'short',
-        }),
-        actual: item.actual_value,
-        projected: item.projected_value,
+        month: item.month,
+        actual: item.actual,
+        projected: item.projected,
       })),
     [projections]
   );
-
-  const handleUpdateBudget = async (category: string, amount: number) => {
-    try {
-      await updateBudget.mutateAsync({
-        category,
-        data: { amount, year: currentYear, month: currentMonth },
-      });
-    } catch (error) {
-      console.error('Failed to update budget:', error);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -212,22 +181,8 @@ export default function DashboardPage() {
             </Card>
           </SimpleGrid>
 
-          {/* Budget Section */}
-          {budgets.length > 0 && (
-            <Card bg="background.secondary" border="none">
-              <CardBody>
-                <BudgetTable
-                  budgets={budgets}
-                  totalBudget={totalBudget}
-                  totalActual={totalActualExpenses}
-                  onUpdateBudget={handleUpdateBudget}
-                />
-              </CardBody>
-            </Card>
-          )}
-
           {/* Net Worth Chart */}
-          {netWorthHistory.length > 0 && projectionChart.length > 0 && (
+          {netWorthHistory.length > 0 && (
             <Card bg="background.secondary" border="none">
               <CardBody>
                 <CombinedNetWorthChart

@@ -52,6 +52,33 @@ export async function handleIncomings(
       return successResponse(incoming, 201);
     }
 
+    // PATCH /incomings/:id - Update income entry
+    if (method === 'PATCH' && pathParts.length === 2) {
+      const incomingId = pathParts[1];
+      const body = JSON.parse(event.body || '{}');
+      const { category_id, amount, description } = body;
+
+      const existing = await prisma.incomingItem.findFirst({
+        where: { id: incomingId, userId },
+      });
+
+      if (!existing) {
+        return errorResponse('NOT_FOUND', 'Income entry not found', 404);
+      }
+
+      const updated = await prisma.incomingItem.update({
+        where: { id: incomingId },
+        data: {
+          categoryId: category_id || existing.categoryId,
+          amount: amount !== undefined ? String(amount) : existing.amount,
+          description: description !== undefined ? description : existing.description,
+        },
+        include: { category: true },
+      });
+
+      return successResponse(updated);
+    }
+
     // DELETE /incomings/:id
     if (method === 'DELETE' && pathParts.length === 2) {
       const incomingId = pathParts[1];

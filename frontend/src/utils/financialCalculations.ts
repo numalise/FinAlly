@@ -95,7 +95,7 @@ export function calculateBudgetMetrics(budgets: any[] = []) {
  */
 export function getLatestNetWorth(history: NetWorthDataPoint[] = []): number {
   if (history.length === 0) return 0;
-  return history[history.length - 1]?.net_worth || 0;
+  return history[history.length - 1]?.value || 0;
 }
 
 /**
@@ -103,5 +103,5 @@ export function getLatestNetWorth(history: NetWorthDataPoint[] = []): number {
  */
 export function getPreviousNetWorth(history: NetWorthDataPoint[] = []): number {
   if (history.length < 2) return 0;
-  return history[history.length - 2]?.net_worth || 0;
+  return history[history.length - 2]?.value || 0;
 }
