@@ -32,14 +32,17 @@ import {
   Input,
 } from '@chakra-ui/react';
 import { FiPlus, FiTrash2, FiSave, FiEdit2 } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatCurrency } from '@/utils/formatters';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '@/types/input';
+import { useSubcategories } from '@/hooks/api/useSubcategories';
 
 interface CashFlowItem {
   id: string;
   categoryId: string;
   categoryName: string;
+  subcategoryId?: string;
+  subcategoryName?: string;
   amount: number;
   description?: string;
 }
@@ -50,9 +53,9 @@ interface CashFlowInputSectionProps {
   incomeItems: CashFlowItem[];
   expenseItems: CashFlowItem[];
   onSaveIncome: (categoryId: string, amount: number, description?: string) => void;
-  onSaveExpense: (categoryId: string, amount: number, description?: string) => void;
+  onSaveExpense: (categoryId: string, amount: number, description?: string, subcategoryId?: string) => void;
   onUpdateIncome: (id: string, categoryId: string, amount: number, description?: string) => void;
-  onUpdateExpense: (id: string, categoryId: string, amount: number, description?: string) => void;
+  onUpdateExpense: (id: string, categoryId: string, amount: number, description?: string, subcategoryId?: string) => void;
   onDeleteIncome: (id: string) => void;
   onDeleteExpense: (id: string) => void;
 }
@@ -74,8 +77,25 @@ export default function CashFlowInputSection({
   const [editMode, setEditMode] = useState<'create' | 'update'>('create');
   const [editItemId, setEditItemId] = useState<string>('');
   const [editCategoryId, setEditCategoryId] = useState('');
+  const [editSubcategoryId, setEditSubcategoryId] = useState('');
   const [editAmount, setEditAmount] = useState('');
   const [editDescription, setEditDescription] = useState('');
+
+  // Load subcategories for expenses when category changes
+  const { data: subcategoriesData } = useSubcategories(
+    activeTab === 1 ? editCategoryId : ''
+  );
+  const subcategories = subcategoriesData?.data || [];
+
+  // Reset subcategory when category changes
+  useEffect(() => {
+    if (activeTab === 1 && subcategories.length > 0) {
+      // Set first subcategory as default if none selected
+      if (!editSubcategoryId) {
+        setEditSubcategoryId(subcategories[0].id);
+      }
+    }
+  }, [editCategoryId, subcategories, activeTab]);
 
   const handleAddIncome = () => {
     setEditMode('create');
@@ -92,6 +112,7 @@ export default function CashFlowInputSection({
     setActiveTab(1);
     setEditItemId('');
     setEditCategoryId(EXPENSE_CATEGORIES[0].code);
+    setEditSubcategoryId('');
     setEditAmount('');
     setEditDescription('');
     onOpen();
@@ -112,6 +133,7 @@ export default function CashFlowInputSection({
     setActiveTab(1);
     setEditItemId(item.id);
     setEditCategoryId(item.categoryId);
+    setEditSubcategoryId(item.subcategoryId || '');
     setEditAmount(String(item.amount));
     setEditDescription(item.description || '');
     onOpen();
@@ -123,19 +145,20 @@ export default function CashFlowInputSection({
         if (activeTab === 0) {
           onSaveIncome(editCategoryId, parseFloat(editAmount), editDescription);
         } else {
-          onSaveExpense(editCategoryId, parseFloat(editAmount), editDescription);
+          onSaveExpense(editCategoryId, parseFloat(editAmount), editDescription, editSubcategoryId);
         }
       } else {
         if (activeTab === 0) {
           onUpdateIncome(editItemId, editCategoryId, parseFloat(editAmount), editDescription);
         } else {
-          onUpdateExpense(editItemId, editCategoryId, parseFloat(editAmount), editDescription);
+          onUpdateExpense(editItemId, editCategoryId, parseFloat(editAmount), editDescription, editSubcategoryId);
         }
       }
       onClose();
       setEditMode('create');
       setEditItemId('');
       setEditCategoryId('');
+      setEditSubcategoryId('');
       setEditAmount('');
       setEditDescription('');
     }
@@ -309,9 +332,16 @@ export default function CashFlowInputSection({
                       {expenseItems.map((item) => (
                         <Tr key={item.id}>
                           <Td>
-                            <Text color="text.primary" fontWeight="medium">
-                              {item.categoryName}
-                            </Text>
+                            <VStack align="start" spacing={0}>
+                              <Text color="text.primary" fontWeight="medium">
+                                {item.categoryName}
+                              </Text>
+                              {item.subcategoryName && (
+                                <Text color="text.secondary" fontSize="xs">
+                                  {item.subcategoryName}
+                                </Text>
+                              )}
+                            </VStack>
                           </Td>
                           <Td isNumeric>
                             <Text color="error.500" fontWeight="medium">
@@ -373,7 +403,10 @@ export default function CashFlowInputSection({
                 <FormLabel color="text.secondary">Category</FormLabel>
                 <Select
                   value={editCategoryId}
-                  onChange={(e) => setEditCategoryId(e.target.value)}
+                  onChange={(e) => {
+                    setEditCategoryId(e.target.value);
+                    setEditSubcategoryId(''); // Reset subcategory when category changes
+                  }}
                   bg="background.tertiary"
                   color="text.primary"
                   borderColor="whiteAlpha.200"
@@ -393,6 +426,33 @@ export default function CashFlowInputSection({
                   ))}
                 </Select>
               </FormControl>
+
+              {activeTab === 1 && subcategories.length > 0 && (
+                <FormControl>
+                  <FormLabel color="text.secondary">Subcategory</FormLabel>
+                  <Select
+                    value={editSubcategoryId}
+                    onChange={(e) => setEditSubcategoryId(e.target.value)}
+                    bg="background.tertiary"
+                    color="text.primary"
+                    borderColor="whiteAlpha.200"
+                    _hover={{ borderColor: 'whiteAlpha.300' }}
+                    _focus={{ borderColor: 'brand.500' }}
+                    sx={{
+                      option: {
+                        bg: 'background.secondary',
+                        color: 'text.primary',
+                      }
+                    }}
+                  >
+                    {subcategories.map((subcat: any) => (
+                      <option key={subcat.id} value={subcat.id}>
+                        {subcat.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
 
               <FormControl>
                 <FormLabel color="text.secondary">Amount (€)</FormLabel>

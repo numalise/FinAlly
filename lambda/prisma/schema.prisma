@@ -29,6 +29,7 @@ model User {
   assetInputs               AssetInput[]
   incomingItems             IncomingItem[]
   expenseItems              ExpenseItem[]
+  expenseSubcategories      ExpenseSubcategory[]
   budgets                   Budget[]
   categoryAllocationTargets CategoryAllocationTarget[]
   networthMaterialized      NetworthMaterialized[]
@@ -180,10 +181,36 @@ model ExpenseCategory {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
-  expenseItems ExpenseItem[]
-  budgets      Budget[]
+  expenseItems   ExpenseItem[]
+  budgets        Budget[]
+  subcategories  ExpenseSubcategory[]
 
   @@map("expense_categories")
+}
+
+// =====================================================================
+// EXPENSE SUBCATEGORIES
+// =====================================================================
+
+model ExpenseSubcategory {
+  id               String   @id @default(uuid()) @db.Uuid
+  code             String   @unique
+  parentCategoryId String   @map("parent_category_id")
+  name             String
+  isDefault        Boolean  @default(true) @map("is_default")
+  sortOrder        Int      @map("sort_order")
+  userId           String?  @map("user_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  parentCategory ExpenseCategory @relation(fields: [parentCategoryId], references: [code], onDelete: Restrict)
+  user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenseItems   ExpenseItem[]
+
+  @@index([parentCategoryId])
+  @@index([userId])
+  @@map("expense_subcategories")
 }
 
 // =====================================================================
@@ -191,22 +218,25 @@ model ExpenseCategory {
 // =====================================================================
 
 model ExpenseItem {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @map("user_id") @db.Uuid
-  categoryId  String   @map("category_id")
-  year        Int
-  month       Int
-  amount      Decimal  @db.Decimal(24, 4)
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  categoryId    String   @map("category_id")
+  subcategoryId String?  @map("subcategory_id") @db.Uuid
+  year          Int
+  month         Int
+  amount        Decimal  @db.Decimal(24, 4)
+  description   String?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
-  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category ExpenseCategory @relation(fields: [categoryId], references: [code], onDelete: Restrict)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    ExpenseCategory     @relation(fields: [categoryId], references: [code], onDelete: Restrict)
+  subcategory ExpenseSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: Restrict)
 
   @@index([userId, year, month], map: "idx_expenses_user_date", type: BTree)
   @@index([userId, categoryId, year, month])
+  @@index([userId, subcategoryId, year, month])
   @@map("expense_items")
 }
 

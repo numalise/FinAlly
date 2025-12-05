@@ -78,17 +78,29 @@ export const api = {
   // Expenses
   getExpenses: (year: number, month: number) =>
     apiClient.get(`/expenses?year=${year}&month=${month}`),
-  createExpense: (data: { category_id: string; year: number; month: number; amount: number; description?: string }) =>
+  createExpense: (data: { category_id: string; subcategory_id?: string; year: number; month: number; amount: number; description?: string }) =>
     apiClient.post('/expenses', data),
-  updateExpense: (id: string, data: { category_id?: string; amount?: number; description?: string }) =>
+  updateExpense: (id: string, data: { category_id?: string; subcategory_id?: string; amount?: number; description?: string }) =>
     apiClient.patch(`/expenses/${id}`, data),
   deleteExpense: (id: string) => apiClient.delete(`/expenses/${id}`),
+
+  // Subcategories
+  getSubcategories: (categoryId: string) =>
+    apiClient.get(`/subcategories?category_id=${categoryId}`),
+  createSubcategory: (data: { parent_category_id: string; name: string }) =>
+    apiClient.post('/subcategories', data),
+  updateSubcategory: (id: string, data: { name: string }) =>
+    apiClient.patch(`/subcategories/${id}`, data),
+  deleteSubcategory: (id: string) =>
+    apiClient.delete(`/subcategories/${id}`),
 
   // Budgets
   getBudgets: (year: number, month: number) =>
     apiClient.get(`/budgets?year=${year}&month=${month}`),
   updateBudget: (category: string, data: { amount: number; year: number; month: number }) =>
     apiClient.patch(`/budgets/${category}`, data),
+  autoAdjustBudgets: (year: number, month: number) =>
+    apiClient.post('/budgets/auto-adjust', { year, month }),
 
   // Allocation
   getAllocation: (year?: number, month?: number) => {

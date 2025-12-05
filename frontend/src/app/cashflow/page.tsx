@@ -26,6 +26,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { useCashFlowManagement } from '@/hooks/useCashFlowManagement';
 import { useOptimisticMutation } from '@/hooks/useOptimisticMutation';
 import { useBudgets, useUpdateBudget } from '@/hooks/api/useBudgets';
+import { useAutoAdjustBudgets } from '@/hooks/api/useSubcategories';
 import BudgetTable from '@/components/dashboard/BudgetTable';
 import { useMemo } from 'react';
 
@@ -56,6 +57,7 @@ export default function CashFlowPage() {
   const { data: budgetsData } = useBudgets(year, month);
   const budgets = useMemo(() => budgetsData?.data || [], [budgetsData]);
   const updateBudget = useUpdateBudget();
+  const autoAdjustBudgets = useAutoAdjustBudgets();
 
   // Calculate budget totals
   const totalBudget = useMemo(
@@ -77,9 +79,9 @@ export default function CashFlowPage() {
     }
   };
 
-  const onSaveExpense = async (categoryId: string, amount: number, description?: string) => {
+  const onSaveExpense = async (categoryId: string, amount: number, description?: string, subcategoryId?: string) => {
     try {
-      await handleSaveExpense(categoryId, amount, description);
+      await handleSaveExpense(categoryId, amount, description, subcategoryId);
       toast({ title: 'Expense added', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to add expense', status: 'error', duration: 3000 });
@@ -95,9 +97,9 @@ export default function CashFlowPage() {
     }
   };
 
-  const onUpdateExpense = async (id: string, categoryId: string, amount: number, description?: string) => {
+  const onUpdateExpense = async (id: string, categoryId: string, amount: number, description?: string, subcategoryId?: string) => {
     try {
-      await handleUpdateExpense(id, categoryId, amount, description);
+      await handleUpdateExpense(id, categoryId, amount, description, subcategoryId);
       toast({ title: 'Expense updated', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'Failed to update expense', status: 'error', duration: 3000 });
@@ -137,6 +139,34 @@ export default function CashFlowPage() {
     } catch (error: any) {
       toast({
         title: 'Failed to update budget',
+        description: error.message || 'An error occurred',
+        status: 'error',
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleAutoAdjust = async () => {
+    try {
+      const nextMonth = month === 12 ? 1 : month + 1;
+      const nextYear = month === 12 ? year + 1 : year;
+
+      const response = await autoAdjustBudgets.mutateAsync({
+        year: nextYear,
+        month: nextMonth,
+      });
+
+      toast({
+        title: 'Budgets auto-adjusted for next month',
+        description: `Applied to ${response.data.adjustments?.length || 0} categories`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to auto-adjust budgets',
         description: error.message || 'An error occurred',
         status: 'error',
         duration: 4000,
@@ -239,6 +269,8 @@ export default function CashFlowPage() {
                 totalBudget={totalBudget}
                 totalActual={totalActualExpenses}
                 onUpdateBudget={handleUpdateBudget}
+                onAutoAdjust={handleAutoAdjust}
+                isAutoAdjusting={autoAdjustBudgets.isPending}
               />
             </CardBody>
           </Card>

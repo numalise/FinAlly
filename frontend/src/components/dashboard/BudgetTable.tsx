@@ -11,7 +11,6 @@ import {
   Td,
   Text,
   HStack,
-  Progress,
   VStack,
   Badge,
   IconButton,
@@ -27,7 +26,7 @@ import {
   Input,
   Button,
 } from '@chakra-ui/react';
-import { FiEdit2 } from 'react-icons/fi';
+import { FiEdit2, FiTrendingUp } from 'react-icons/fi';
 import { useState } from 'react';
 import { formatCurrency } from '@/utils/formatters';
 
@@ -44,9 +43,11 @@ interface BudgetTableProps {
   totalBudget: number;
   totalActual: number;
   onUpdateBudget: (category: string, amount: number) => void;
+  onAutoAdjust?: () => void;
+  isAutoAdjusting?: boolean;
 }
 
-export default function BudgetTable({ budgets, totalBudget, totalActual, onUpdateBudget }: BudgetTableProps) {
+export default function BudgetTable({ budgets, totalBudget, totalActual, onUpdateBudget, onAutoAdjust, isAutoAdjusting }: BudgetTableProps) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingBudget, setEditingBudget] = useState<BudgetItem | null>(null);
   const [editAmount, setEditAmount] = useState('');
@@ -72,14 +73,28 @@ export default function BudgetTable({ budgets, totalBudget, totalActual, onUpdat
         <Heading size="md" color="text.primary">
           Monthly Budget
         </Heading>
-        <VStack spacing={0} align="end">
-          <Text fontSize="xs" color="text.secondary">
-            {formatCurrency(totalActual)} / {formatCurrency(totalBudget)}
-          </Text>
-          <Text fontSize="xs" color={totalActual > totalBudget ? 'error.500' : 'success.500'}>
-            {totalActual > totalBudget ? 'Over' : 'Under'} budget
-          </Text>
-        </VStack>
+        <HStack spacing={4}>
+          {onAutoAdjust && (
+            <Button
+              leftIcon={<FiTrendingUp />}
+              size="sm"
+              colorScheme="purple"
+              onClick={onAutoAdjust}
+              isLoading={isAutoAdjusting}
+              loadingText="Adjusting..."
+            >
+              Auto-Adjust Next Month
+            </Button>
+          )}
+          <VStack spacing={0} align="end">
+            <Text fontSize="xs" color="text.secondary">
+              {formatCurrency(totalActual)} / {formatCurrency(totalBudget)}
+            </Text>
+            <Text fontSize="xs" color={totalActual > totalBudget ? 'error.500' : 'success.500'}>
+              {totalActual > totalBudget ? 'Over' : 'Under'} budget
+            </Text>
+          </VStack>
+        </HStack>
       </HStack>
 
       <Box overflowX="auto">
@@ -90,7 +105,6 @@ export default function BudgetTable({ budgets, totalBudget, totalActual, onUpdat
               <Th border="none" isNumeric>Budget</Th>
               <Th border="none" isNumeric>Actual</Th>
               <Th border="none" isNumeric>Remaining</Th>
-              <Th border="none" width="200px">Progress</Th>
               <Th border="none"></Th>
             </Tr>
           </Thead>
@@ -128,21 +142,6 @@ export default function BudgetTable({ budgets, totalBudget, totalActual, onUpdat
                     <Text color={remaining >= 0 ? 'success.500' : 'error.500'} fontWeight="medium">
                       {formatCurrency(Math.abs(remaining))}
                     </Text>
-                  </Td>
-                  <Td border="none">
-                    <VStack spacing={1} align="stretch">
-                      <Progress
-                        value={Math.min(percentage, 100)}
-                        max={100}
-                        colorScheme={isOver ? 'red' : percentage > 80 ? 'orange' : 'green'}
-                        bg="background.tertiary"
-                        borderRadius="full"
-                        h="6px"
-                      />
-                      <Text fontSize="xs" color="text.secondary" textAlign="right">
-                        {percentage.toFixed(0)}%
-                      </Text>
-                    </VStack>
                   </Td>
                   <Td border="none">
                     <IconButton

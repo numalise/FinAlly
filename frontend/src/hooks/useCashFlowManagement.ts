@@ -20,6 +20,8 @@ interface CashFlowItem {
   id: string;
   categoryId: string;
   categoryName: string;
+  subcategoryId?: string;
+  subcategoryName?: string;
   amount: number;
   description?: string;
 }
@@ -53,6 +55,8 @@ export function useCashFlowManagement(year: number, month: number) {
       id: item.id,
       categoryId: item.categoryId,
       categoryName: item.category?.name || 'Unknown',
+      subcategoryId: item.subcategoryId,
+      subcategoryName: item.subcategory?.name,
       amount: typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount,
       description: item.description,
     })),
@@ -83,10 +87,12 @@ export function useCashFlowManagement(year: number, month: number) {
   const handleSaveExpense = async (
     categoryId: string,
     amount: number,
-    description?: string
+    description?: string,
+    subcategoryId?: string
   ) => {
     return createExpense.mutateAsync({
       category_id: categoryId,
+      subcategory_id: subcategoryId,
       year,
       month,
       amount,
@@ -114,12 +120,14 @@ export function useCashFlowManagement(year: number, month: number) {
     id: string,
     categoryId: string,
     amount: number,
-    description?: string
+    description?: string,
+    subcategoryId?: string
   ) => {
     return updateExpense.mutateAsync({
       id,
       data: {
         category_id: categoryId,
+        subcategory_id: subcategoryId,
         amount,
         description,
       },

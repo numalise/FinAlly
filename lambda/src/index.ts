@@ -8,6 +8,7 @@ import { handleAssets } from './routes/assets';
 import { handleAssetInputs } from './routes/assetInputs';
 import { handleIncomings } from './routes/incomings';
 import { handleExpenses } from './routes/expenses';
+import { handleSubcategories } from './routes/subcategories';
 import { handleBudgets } from './routes/budgets';
 import { handleAllocation } from './routes/allocation';
 import { handleNetworth } from './routes/networth';
@@ -78,7 +79,11 @@ export const handler = async (event: any): Promise<APIGatewayProxyResultV2> => {
     if (path.startsWith('/expenses')) {
       return await handleExpenses(event as any, prisma, userId);
     }
-    
+
+    if (path.startsWith('/subcategories')) {
+      return await handleSubcategories(event as any, prisma, userId);
+    }
+
     if (path.startsWith('/budgets')) {
       return await handleBudgets(event as any, prisma, userId);
     }

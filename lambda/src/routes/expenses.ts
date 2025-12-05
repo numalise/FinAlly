@@ -25,7 +25,7 @@ export async function handleExpenses(
 
       const expenses = await prisma.expenseItem.findMany({
         where: { userId, year, month },
-        include: { category: true },
+        include: { category: true, subcategory: true },
         orderBy: { createdAt: 'asc' },
       });
 
@@ -35,18 +35,19 @@ export async function handleExpenses(
     // POST /expenses - Create expense entry
     if (method === 'POST') {
       const body = JSON.parse(event.body || '{}');
-      const { category_id, year, month, amount, description } = body;
+      const { category_id, subcategory_id, year, month, amount, description } = body;
 
       const expense = await prisma.expenseItem.create({
         data: {
           userId,
           categoryId: category_id,
+          subcategoryId: subcategory_id || null,
           year: parseInt(year),
           month: parseInt(month),
           amount: String(amount),
           description: description || null,
         },
-        include: { category: true },
+        include: { category: true, subcategory: true },
       });
 
       return successResponse(expense, 201);
@@ -56,7 +57,7 @@ export async function handleExpenses(
     if (method === 'PATCH' && pathParts.length === 2) {
       const expenseId = pathParts[1];
       const body = JSON.parse(event.body || '{}');
-      const { category_id, amount, description } = body;
+      const { category_id, subcategory_id, amount, description } = body;
 
       const existing = await prisma.expenseItem.findFirst({
         where: { id: expenseId, userId },
@@ -70,10 +71,11 @@ export async function handleExpenses(
         where: { id: expenseId },
         data: {
           categoryId: category_id || existing.categoryId,
+          subcategoryId: subcategory_id !== undefined ? subcategory_id : existing.subcategoryId,
           amount: amount !== undefined ? String(amount) : existing.amount,
           description: description !== undefined ? description : existing.description,
         },
-        include: { category: true },
+        include: { category: true, subcategory: true },
       });
 
       return successResponse(updated);

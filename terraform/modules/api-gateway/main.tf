@@ -206,6 +206,50 @@ resource "aws_apigatewayv2_route" "delete_expense" {
   authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
+resource "aws_apigatewayv2_route" "update_expense" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PATCH /expenses/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+# =====================================================================
+# Routes - Subcategories (With Auth)
+# =====================================================================
+
+resource "aws_apigatewayv2_route" "get_subcategories" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "GET /subcategories"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "create_subcategory" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "POST /subcategories"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "update_subcategory" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "PATCH /subcategories/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
+resource "aws_apigatewayv2_route" "delete_subcategory" {
+  api_id             = aws_apigatewayv2_api.main.id
+  route_key          = "DELETE /subcategories/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
+}
+
 # =====================================================================
 # Routes - Budgets (With Auth)
 # =====================================================================
