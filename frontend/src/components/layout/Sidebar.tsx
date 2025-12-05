@@ -4,6 +4,7 @@ import { Box, VStack, HStack, Text, Icon, Button } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { FiHome, FiPieChart, FiEdit3, FiDollarSign, FiSettings, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: FiHome },
@@ -15,6 +16,7 @@ const navigation = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   return (
     <Box
@@ -83,6 +85,7 @@ export default function Sidebar() {
           justifyContent="flex-start"
           color="text.secondary"
           _hover={{ bg: 'background.tertiary', color: 'text.primary' }}
+          onClick={logout}
         >
           Logout
         </Button>

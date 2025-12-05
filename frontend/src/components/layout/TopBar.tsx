@@ -18,12 +18,13 @@ import {
 } from '@chakra-ui/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { FiMenu, FiHome, FiPieChart, FiTrendingUp, FiDollarSign, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FiMenu, FiHome, FiPieChart, FiEdit3, FiDollarSign, FiSettings, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: FiHome },
   { name: 'Asset Allocation', href: '/allocation', icon: FiPieChart },
-  { name: 'Monthly Investments', href: '/investments', icon: FiTrendingUp },
+  { name: 'Monthly Input', href: '/input', icon: FiEdit3 },
   { name: 'Cash Flow', href: '/cashflow', icon: FiDollarSign },
   { name: 'Settings', href: '/settings', icon: FiSettings },
 ];
@@ -31,6 +32,7 @@ const navigation = [
 export default function TopBar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   return (
     <Box
@@ -98,6 +100,7 @@ export default function TopBar() {
                   w="full"
                   color="text.secondary"
                   _hover={{ bg: 'background.tertiary', color: 'text.primary' }}
+                  onClick={logout}
                 >
                   Logout
                 </Button>

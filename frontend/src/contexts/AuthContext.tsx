@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('idToken');
     localStorage.removeItem('refreshToken');
     setToken(null);
-    router.push('/login');
+    router.push('/');
   };
 
   const isLoading = isInitializing || (token !== null && userLoading);
