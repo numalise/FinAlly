@@ -4,7 +4,7 @@ PostgreSQL 16.10 database schema for personal finance tracking.
 
 ## 📊 Schema Overview
 
-**13 Core Tables:**
+**14 Core Tables:**
 
 ### Users & Authentication
 - `users` - User accounts with Cognito integration
@@ -20,6 +20,7 @@ PostgreSQL 16.10 database schema for personal finance tracking.
 - `income_categories` - Income source types
 - `incoming_items` - Individual income entries
 - `expense_categories` - Expense category types
+- `expense_subcategories` - Custom subcategories for expenses (user-defined + defaults)
 - `expense_items` - Individual expense entries
 - `budgets` - Monthly budget tracking
 
@@ -98,8 +99,8 @@ cd scripts
 ```
 
 ### Migration Files
-- `001_initial_schema.sql` - Initial schema (partial)
-- `002_missing_tables.sql` - Asset management tables
+- `001_complete_schema.sql` - Complete initial schema (14 tables)
+- `002_add_subcategories.sql` - Expense subcategories feature
 
 ---
 
