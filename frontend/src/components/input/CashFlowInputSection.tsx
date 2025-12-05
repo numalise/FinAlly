@@ -1,0 +1,506 @@
+'use client';
+
+import {
+  Box,
+  Heading,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  IconButton,
+  HStack,
+  Text,
+  Button,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  VStack,
+  FormControl,
+  FormLabel,
+  Select,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  Input,
+} from '@chakra-ui/react';
+import { FiPlus, FiTrash2, FiSave, FiEdit2 } from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { formatCurrency } from '@/utils/formatters';
+import { INCOME_CATEGORIES, EXPENSE_CATEGORIES } from '@/types/input';
+import { useSubcategories } from '@/hooks/api/useSubcategories';
+
+interface CashFlowItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  subcategoryId?: string;
+  subcategoryName?: string;
+  amount: number;
+  description?: string;
+}
+
+interface CashFlowInputSectionProps {
+  year: number;
+  month: number;
+  incomeItems: CashFlowItem[];
+  expenseItems: CashFlowItem[];
+  onSaveIncome: (categoryId: string, amount: number, description?: string) => void;
+  onSaveExpense: (categoryId: string, amount: number, description?: string, subcategoryId?: string) => void;
+  onUpdateIncome: (id: string, categoryId: string, amount: number, description?: string) => void;
+  onUpdateExpense: (id: string, categoryId: string, amount: number, description?: string, subcategoryId?: string) => void;
+  onDeleteIncome: (id: string) => void;
+  onDeleteExpense: (id: string) => void;
+}
+
+export default function CashFlowInputSection({
+  year,
+  month,
+  incomeItems,
+  expenseItems,
+  onSaveIncome,
+  onSaveExpense,
+  onUpdateIncome,
+  onUpdateExpense,
+  onDeleteIncome,
+  onDeleteExpense,
+}: CashFlowInputSectionProps) {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [activeTab, setActiveTab] = useState(0);
+  const [editMode, setEditMode] = useState<'create' | 'update'>('create');
+  const [editItemId, setEditItemId] = useState<string>('');
+  const [editCategoryId, setEditCategoryId] = useState('');
+  const [editSubcategoryId, setEditSubcategoryId] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+
+  // Load subcategories for expenses when category changes
+  const { data: subcategoriesData } = useSubcategories(
+    activeTab === 1 ? editCategoryId : ''
+  );
+  const subcategories = subcategoriesData?.data || [];
+
+  // Reset subcategory when category changes
+  useEffect(() => {
+    if (activeTab === 1 && subcategories.length > 0) {
+      // Set first subcategory as default if none selected
+      if (!editSubcategoryId) {
+        setEditSubcategoryId(subcategories[0].id);
+      }
+    }
+  }, [editCategoryId, subcategories, activeTab]);
+
+  const handleAddIncome = () => {
+    setEditMode('create');
+    setActiveTab(0);
+    setEditItemId('');
+    setEditCategoryId(INCOME_CATEGORIES[0].code);
+    setEditAmount('');
+    setEditDescription('');
+    onOpen();
+  };
+
+  const handleAddExpense = () => {
+    setEditMode('create');
+    setActiveTab(1);
+    setEditItemId('');
+    setEditCategoryId(EXPENSE_CATEGORIES[0].code);
+    setEditSubcategoryId('');
+    setEditAmount('');
+    setEditDescription('');
+    onOpen();
+  };
+
+  const handleEditIncome = (item: CashFlowItem) => {
+    setEditMode('update');
+    setActiveTab(0);
+    setEditItemId(item.id);
+    setEditCategoryId(item.categoryId);
+    setEditAmount(String(item.amount));
+    setEditDescription(item.description || '');
+    onOpen();
+  };
+
+  const handleEditExpense = (item: CashFlowItem) => {
+    setEditMode('update');
+    setActiveTab(1);
+    setEditItemId(item.id);
+    setEditCategoryId(item.categoryId);
+    setEditSubcategoryId(item.subcategoryId || '');
+    setEditAmount(String(item.amount));
+    setEditDescription(item.description || '');
+    onOpen();
+  };
+
+  const handleSave = () => {
+    if (editCategoryId && editAmount) {
+      if (editMode === 'create') {
+        if (activeTab === 0) {
+          onSaveIncome(editCategoryId, parseFloat(editAmount), editDescription);
+        } else {
+          onSaveExpense(editCategoryId, parseFloat(editAmount), editDescription, editSubcategoryId);
+        }
+      } else {
+        if (activeTab === 0) {
+          onUpdateIncome(editItemId, editCategoryId, parseFloat(editAmount), editDescription);
+        } else {
+          onUpdateExpense(editItemId, editCategoryId, parseFloat(editAmount), editDescription, editSubcategoryId);
+        }
+      }
+      onClose();
+      setEditMode('create');
+      setEditItemId('');
+      setEditCategoryId('');
+      setEditSubcategoryId('');
+      setEditAmount('');
+      setEditDescription('');
+    }
+  };
+
+  const totalIncome = incomeItems.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenses = expenseItems.reduce((sum, item) => sum + item.amount, 0);
+  const netSavings = totalIncome - totalExpenses;
+  const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
+
+  return (
+    <Box>
+      <HStack justify="space-between" mb={4}>
+        <Heading size="md" color="text.primary">
+          Cash Flow
+        </Heading>
+        <HStack spacing={4}>
+          <VStack spacing={0} align="end">
+            <Text fontSize="xs" color="text.secondary">Savings Rate</Text>
+            <Text fontSize="lg" fontWeight="bold" color="brand.500">
+              {savingsRate.toFixed(1)}%
+            </Text>
+          </VStack>
+          <VStack spacing={0} align="end">
+            <Text fontSize="xs" color="text.secondary">Net Savings</Text>
+            <Text fontSize="lg" fontWeight="bold" color={netSavings >= 0 ? 'success.500' : 'error.500'}>
+              {formatCurrency(netSavings)}
+            </Text>
+          </VStack>
+        </HStack>
+      </HStack>
+
+      <Tabs 
+        colorScheme="blue" 
+        index={activeTab} 
+        onChange={setActiveTab}
+        variant="enclosed"
+      >
+        <TabList borderColor="whiteAlpha.200">
+          <Tab 
+            color="text.secondary"
+            _selected={{ 
+              color: 'text.primary', 
+              bg: 'background.tertiary',
+              borderColor: 'whiteAlpha.200',
+              borderBottomColor: 'background.tertiary'
+            }}
+          >
+            Income ({incomeItems.length})
+          </Tab>
+          <Tab 
+            color="text.secondary"
+            _selected={{ 
+              color: 'text.primary', 
+              bg: 'background.tertiary',
+              borderColor: 'whiteAlpha.200',
+              borderBottomColor: 'background.tertiary'
+            }}
+          >
+            Expenses ({expenseItems.length})
+          </Tab>
+        </TabList>
+
+        <TabPanels>
+          <TabPanel px={0}>
+            <VStack spacing={4} align="stretch">
+              <HStack justify="space-between">
+                <Text fontSize="sm" color="text.secondary">
+                  Total Income: {formatCurrency(totalIncome)}
+                </Text>
+                <Button
+                  leftIcon={<FiPlus />}
+                  size="sm"
+                  colorScheme="blue"
+                  onClick={handleAddIncome}
+                >
+                  Add Income
+                </Button>
+              </HStack>
+
+              {incomeItems.length > 0 ? (
+                <Box overflowX="auto">
+                  <Table variant="simple" size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>Category</Th>
+                        <Th isNumeric>Amount</Th>
+                        <Th>Description</Th>
+                        <Th>Actions</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {incomeItems.map((item) => (
+                        <Tr key={item.id}>
+                          <Td>
+                            <Text color="text.primary" fontWeight="medium">
+                              {item.categoryName}
+                            </Text>
+                          </Td>
+                          <Td isNumeric>
+                            <Text color="success.500" fontWeight="medium">
+                              {formatCurrency(item.amount)}
+                            </Text>
+                          </Td>
+                          <Td>
+                            <Text color="text.secondary" fontSize="sm" noOfLines={1}>
+                              {item.description || '-'}
+                            </Text>
+                          </Td>
+                          <Td>
+                            <HStack spacing={1}>
+                              <IconButton
+                                aria-label="Edit"
+                                icon={<FiEdit2 />}
+                                size="sm"
+                                variant="ghost"
+                                color="blue.400"
+                                onClick={() => handleEditIncome(item)}
+                              />
+                              <IconButton
+                                aria-label="Delete"
+                                icon={<FiTrash2 />}
+                                size="sm"
+                                variant="ghost"
+                                color="red.400"
+                                onClick={() => onDeleteIncome(item.id)}
+                              />
+                            </HStack>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+              ) : (
+                <Text color="text.secondary" textAlign="center" py={8}>
+                  No income entries for this month
+                </Text>
+              )}
+            </VStack>
+          </TabPanel>
+
+          <TabPanel px={0}>
+            <VStack spacing={4} align="stretch">
+              <HStack justify="space-between">
+                <Text fontSize="sm" color="text.secondary">
+                  Total Expenses: {formatCurrency(totalExpenses)}
+                </Text>
+                <Button
+                  leftIcon={<FiPlus />}
+                  size="sm"
+                  colorScheme="blue"
+                  onClick={handleAddExpense}
+                >
+                  Add Expense
+                </Button>
+              </HStack>
+
+              {expenseItems.length > 0 ? (
+                <Box overflowX="auto">
+                  <Table variant="simple" size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>Category</Th>
+                        <Th isNumeric>Amount</Th>
+                        <Th>Description</Th>
+                        <Th>Actions</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {expenseItems.map((item) => (
+                        <Tr key={item.id}>
+                          <Td>
+                            <VStack align="start" spacing={0}>
+                              <Text color="text.primary" fontWeight="medium">
+                                {item.categoryName}
+                              </Text>
+                              {item.subcategoryName && (
+                                <Text color="text.secondary" fontSize="xs">
+                                  {item.subcategoryName}
+                                </Text>
+                              )}
+                            </VStack>
+                          </Td>
+                          <Td isNumeric>
+                            <Text color="error.500" fontWeight="medium">
+                              {formatCurrency(item.amount)}
+                            </Text>
+                          </Td>
+                          <Td>
+                            <Text color="text.secondary" fontSize="sm" noOfLines={1}>
+                              {item.description || '-'}
+                            </Text>
+                          </Td>
+                          <Td>
+                            <HStack spacing={1}>
+                              <IconButton
+                                aria-label="Edit"
+                                icon={<FiEdit2 />}
+                                size="sm"
+                                variant="ghost"
+                                color="blue.400"
+                                onClick={() => handleEditExpense(item)}
+                              />
+                              <IconButton
+                                aria-label="Delete"
+                                icon={<FiTrash2 />}
+                                size="sm"
+                                variant="ghost"
+                                color="red.400"
+                                onClick={() => onDeleteExpense(item.id)}
+                              />
+                            </HStack>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+              ) : (
+                <Text color="text.secondary" textAlign="center" py={8}>
+                  No expense entries for this month
+                </Text>
+              )}
+            </VStack>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
+
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent bg="background.secondary">
+          <ModalHeader color="text.primary">
+            {editMode === 'create'
+              ? (activeTab === 0 ? 'Add Income' : 'Add Expense')
+              : (activeTab === 0 ? 'Edit Income' : 'Edit Expense')}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <VStack spacing={4}>
+              <FormControl>
+                <FormLabel color="text.secondary">Category</FormLabel>
+                <Select
+                  value={editCategoryId}
+                  onChange={(e) => {
+                    setEditCategoryId(e.target.value);
+                    setEditSubcategoryId(''); // Reset subcategory when category changes
+                  }}
+                  bg="background.tertiary"
+                  color="text.primary"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ borderColor: 'whiteAlpha.300' }}
+                  _focus={{ borderColor: 'brand.500' }}
+                  sx={{
+                    option: {
+                      bg: 'background.secondary',
+                      color: 'text.primary',
+                    }
+                  }}
+                >
+                  {(activeTab === 0 ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map((cat) => (
+                    <option key={cat.code} value={cat.code}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+
+              {activeTab === 1 && subcategories.length > 0 && (
+                <FormControl>
+                  <FormLabel color="text.secondary">Subcategory</FormLabel>
+                  <Select
+                    value={editSubcategoryId}
+                    onChange={(e) => setEditSubcategoryId(e.target.value)}
+                    bg="background.tertiary"
+                    color="text.primary"
+                    borderColor="whiteAlpha.200"
+                    _hover={{ borderColor: 'whiteAlpha.300' }}
+                    _focus={{ borderColor: 'brand.500' }}
+                    sx={{
+                      option: {
+                        bg: 'background.secondary',
+                        color: 'text.primary',
+                      }
+                    }}
+                  >
+                    {subcategories.map((subcat: any) => (
+                      <option key={subcat.id} value={subcat.id}>
+                        {subcat.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+
+              <FormControl>
+                <FormLabel color="text.secondary">Amount (€)</FormLabel>
+                <Input
+                  type="number"
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  step="0.01"
+                  bg="background.tertiary"
+                  color="text.primary"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ borderColor: 'whiteAlpha.300' }}
+                  _focus={{ borderColor: 'brand.500' }}
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel color="text.secondary">Description (optional)</FormLabel>
+                <Input
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  placeholder="Add description"
+                  bg="background.tertiary"
+                  color="text.primary"
+                  borderColor="whiteAlpha.200"
+                  _hover={{ borderColor: 'whiteAlpha.300' }}
+                  _focus={{ borderColor: 'brand.500' }}
+                />
+              </FormControl>
+
+              <HStack spacing={3} w="full" justify="flex-end">
+                <Button variant="ghost" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  colorScheme="blue"
+                  leftIcon={<FiSave />}
+                  onClick={handleSave}
+                  isDisabled={!editCategoryId || !editAmount}
+                >
+                  Save
+                </Button>
+              </HStack>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </Box>
+  );
+}

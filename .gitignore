@@ -1,79 +1,137 @@
-# Credentials and secrets
+# =====================================================================
+# Credentials & Secrets
+# =====================================================================
 .env
 .env.*
+!.env.example
 .aws/
 session.json
 *.pem
 *.key
-*_credentials.json
-secrets/
+**/secrets/
+**/.secrets/
 
+# =====================================================================
 # Terraform
+# =====================================================================
 .terraform/
 .terraform.lock.hcl
 terraform.tfstate
-terraform.tfstate.backup
+terraform.tfstate.*
+*.tfstate
+*.tfstate.*
 *.tfvars
 !terraform.tfvars.example
 *.tfplan
-.terraformrc
-terraform.rc
+.terraform.tfstate.lock.info
+crash.log
+crash.*.log
 
-# Node.js / Frontend
-node_modules/
-.next/
-out/
-dist/
-build/
+# =====================================================================
+# Logs & Temporary Files
+# =====================================================================
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# IDE
-.vscode/
-.idea/
+*.tmp
 *.swp
 *.swo
 *~
 .DS_Store
+Thumbs.db
 
-# Python (if used for Lambda)
+# =====================================================================
+# IDE & Editors
+# =====================================================================
+.vscode/
+.idea/
+*.code-workspace
+.sublime-workspace
+.sublime-project
+
+# =====================================================================
+# AI Assistants
+# =====================================================================
+.claude/
+.cursor/
+.anthropic/
+.aider*
+.copilot/
+claude.json
+cursor.json
+
+# =====================================================================
+# Node.js
+# =====================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm/
+.yarn/
+dist/
+build/
+.next/
+out/
+
+# =====================================================================
+# Python
+# =====================================================================
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 .Python
 venv/
 ENV/
+.venv
+*.egg-info/
 
-# Logs and temporary files
-*.log
-*.tmp
-*.temp
-logs/
-*.pid
-*.seed
-*.pid.lock
+# =====================================================================
+# Database
+# =====================================================================
+*.sql.backup
+*.db
+*.sqlite
+*.sqlite3
 
-# Testing
+# =====================================================================
+# OS Files
+# =====================================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =====================================================================
+# Test Coverage
+# =====================================================================
 coverage/
 .nyc_output/
-*.test.js.snap
+*.lcov
 
-# OS
-Thumbs.db
-.DS_Store
+# =====================================================================
+# Local Scripts (if needed)
+# =====================================================================
+scripts/local/
+scripts/temp/
 
-# Backup files
-*.bak
-*.backup
-*~
+# =====================================================================
+# Lambda Build Artifacts
+# =====================================================================
+lambda/dist/
+lambda/function.zip
+lambda/node_modules/
+lambda/prisma/migrations/
 
-# Package files
+# =====================================================================
+# Terraform Lambda Package
+# =====================================================================
+terraform/environments/*/function.zip
+
+# Lambda deployment packages
+lambda/*.zip
+lambda/dist/
+lambda/layers/
 *.zip
-*.tar.gz
-
-# Local environment
-.local/

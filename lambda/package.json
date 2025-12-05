@@ -1,0 +1,33 @@
+{
+  "name": "finally-api",
+  "version": "1.0.0",
+  "description": "FinAlly Serverless API with Prisma",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@prisma/client --external:@aws-sdk/* --format=esm",
+    "deploy": "npm run build && ./scripts/package.sh",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "lint": "eslint src --ext .ts",
+    "test": "echo \"Tests coming in Phase 6\" && exit 0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.1",
+    "aws-jwt-verify": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^20.17.6",
+    "@typescript-eslint/eslint-plugin": "^8.16.0",
+    "@typescript-eslint/parser": "^8.16.0",
+    "@vercel/ncc": "^0.38.4",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.15.0",
+    "prisma": "^6.0.1",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "region": "eu-central-1",
+  "userPoolId": "eu-central-1_pxlqpT5iO",
+  "userPoolWebClientId": "7m4gp37jb4ooaeiemu7m2r20mf",
+  "domain": "finally-dev-5i9xf0y1",
+  "hostedUiUrl": "https://finally-dev-5i9xf0y1.auth.eu-central-1.amazoncognito.com",
+  "callbackUrl": "http://localhost:3000/auth/callback",
+  "logoutUrl": "http://localhost:3000",
+  "oauth": {
+    "scopes": ["email", "openid", "profile", "aws.cognito.signin.user.admin"],
+    "responseType": "code"
+  }
+}
